@@ -1,0 +1,8 @@
+config BR2_PACKAGE_TTDNSD
+	tristate "ttdnsd - The TOR TCP DNS Daemon"
+	default m if CONFIG_DEVEL
+	select BR2_PACKAGE_TSOCKS
+	help
+		A DNS Resolver for TOR 
+	  
+		http://www.mulliner.org/collin/ttdnsd.php

@@ -1,0 +1,5 @@
+ttdnsd - The TOR TCP DNS Daemon
+
+see: http://www.mulliner.org/collin/ttdnsd.php
+
+to get ttdnsd working for your local machine see ttdnstor/README

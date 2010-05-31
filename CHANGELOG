@@ -1,0 +1,8 @@
+v0.2 Jul. 22. 2007
+ - added libttdnstor.so
+   this is an LD_PRELOAD library for redirecting open/fopen to 
+	 /etc/resolv.conf to alternative file in order to run ttdnsd in local
+	 mode. See README for details.
+
+v0.1 Jan. 25. 2007
+ - initial version

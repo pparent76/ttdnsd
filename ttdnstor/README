@@ -1,0 +1,14 @@
+Howto use libttdnstor
+
+/etc/resolv.conf.tor contains your real nameserver(s) e.g. the ones provided by
+your ISP.
+
+1) tell libttdnstor where to find the real nameserver(s)
+ export TTDNSD_REALRESOLVCONF=/etc/resolv.conf.tor
+
+2) run tor with libttdnstor to give tor access to real nameserver(s)
+ LD_PRELOAD=FULL_PATH_TO_libttdnstor.so.1 ./tor
+
+3) run ttdnsd
+ echo "nameserver 127.0.0.1" >/etc/resolv.conf
+ torify ttdnsd -b 127.0.0.1 -f /etc/ttdnsd.conf

@@ -1,0 +1,4 @@
+Package: ttdnsd
+Priority: optional
+Section: net
+Description: DNS resolver for TOR

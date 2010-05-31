@@ -1,0 +1,5 @@
+main.c		:	the source to ttdnsd
+Makefile	:	makefile to build ttdnsd
+package		:	the buildroot compatible build files
+rest			:	documentation
+ttdnstor	: ld_preload library sources
