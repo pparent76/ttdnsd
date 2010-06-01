@@ -20,8 +20,7 @@
 #include <sys/poll.h>
 #include <netinet/in.h>
 #include <netdb.h>
-#include <linux/if.h>
-#include <linux/if_tun.h>
+#include <net/if.h>
 #include <arpa/inet.h>
 
 /*
