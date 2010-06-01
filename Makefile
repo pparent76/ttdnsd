@@ -25,6 +25,10 @@ clean:
 
 install: all
 	strip $(EXEC)
-	mkdir $(DESTDIR)/$(CHROOT)
-	cp $(CONF) $(DESTDIR)/$(CHROOT)
+	mkdir $(DESTDIR)$(CHROOT)
+	cp $(CONF) $(DESTDIR)$(CHROOT)
 	cp $(EXEC) $(DESTDIR)/usr/sbin/
+
+uninstall: all
+	rm $(DESTDIR)/usr/sbin/$(EXEC)
+	rm -ri $(DESTDIR)$(CHROOT)
