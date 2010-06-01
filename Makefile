@@ -2,6 +2,7 @@ EXEC = ttdnsd
 CC = /usr/bin/gcc
 CHROOT = /var/run/ttdnsd/
 CONF = ttdnsd.conf
+TORTSOCKSCONF = /etc/tor/tor-tsocks.conf
 TSOCKSLIB = tsocks
 # If the program ever grows, we'll enjoy this macro:
 SRCFILES := $(wildcard *.c)
@@ -27,6 +28,7 @@ install: all
 	strip $(EXEC)
 	mkdir $(DESTDIR)$(CHROOT)
 	cp $(CONF) $(DESTDIR)$(CHROOT)
+	cp $(TORTSOCKSCONF) $(DESTDIR)$(CHROOT)/tsocks.conf
 	cp $(EXEC) $(DESTDIR)/usr/sbin/
 
 uninstall: all
