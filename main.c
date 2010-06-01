@@ -109,8 +109,11 @@ static struct peer_t peers[MAX_PEERS]; /**< TCP peers */
 static struct request_t requests[MAX_REQUESTS]; /**< request queue */
 static int udp_fd; /**< port 53 socket */
 
+/*
+Someday:
 static int multipeer = 0;
 static int multireq = 0;
+*/
 
 static int request_find(int id)
 {
@@ -184,10 +187,12 @@ static int peer_connected(int peer)
 	}
 }
 
+/*
 static int peer_keepalive(int peer)
 {
 	return 1;
 }
+*/
 
 static int peer_sendreq(int peer, int req)
 {
