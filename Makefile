@@ -1,5 +1,7 @@
 EXEC = ttdnsd
 CC = /usr/bin/gcc
+CHROOT = /var/run/ttdnsd/
+CONF = ttdnsd.conf
 
 # Hardening and warnings for building with gcc
 CFLAGS=-O2 -D_FORTIFY_SOURCE=2 -fstack-protector-all -fwrapv -fPIE -Wstack-protector -Wformat -Wformat-security -Wpointer-sign -Wall
@@ -18,5 +20,7 @@ clean:
 	rm -f main.o $(EXEC)
 
 install: all
-	cp $(EXEC) $(DESTDIR)
-	cp ttdnsd.conf $(DESTDIR)
+	mkdir $(CHROOT)
+	cp $(CONF) $(CHROOT)
+	cp $(EXEC) $(DESTDIR)/usr/sbin/
+	cp ttdnsd.conf $(DESTDIR)/etc/
