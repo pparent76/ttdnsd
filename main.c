@@ -1,5 +1,5 @@
 /*
- *  The TOR TCP DNS Daemon
+ *  The Tor TCP DNS Daemon
  *
  *  Copyright (c) Collin R. Mulliner <collin(AT)mulliner.org>
  *
@@ -26,7 +26,7 @@
 
 /*
  *  binary is linked with libtsocks therefore all TCP connections will
- *  be routed over TOR (if /etc/tsocks.conf is setup correctly)
+ *  be routed over Tor (if /etc/tsocks.conf is setup correctly)
  *
  *  see makefile about disableing tsocks (for testing)
  *

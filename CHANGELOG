@@ -1,15 +1,21 @@
+v0.4 XXX
+ - added gcc hardening stuff
+ - enabled warnings
+ - clean up of various texts
+ - ensured build no longer has any warnings at compile time
+
 v0.3 Jun. 1. 2010
  - added a couple of features
  - source cleanup and documentation
- - license changed in order to be included with TOR
+ - license changed in order to be included with Tor
  - linked to libtsocks to get rid of the tsocks wrapper
  - removed libttdnstor.so it is not needed
 
 v0.2 Jul. 22. 2007
  - added libttdnstor.so
-   this is an LD_PRELOAD library for redirecting open/fopen to 
-	 /etc/resolv.conf to alternative file in order to run ttdnsd in local
-	 mode. See README for details.
+   this is an LD_PRELOAD library for redirecting open/fopen to
+   /etc/resolv.conf to alternative file in order to run ttdnsd in local
+   mode. See README for details.
 
 v0.1 Jan. 25. 2007
  - initial version

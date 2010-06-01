@@ -1,11 +1,15 @@
-ttdnsd - The TOR TCP DNS Daemon
+ttdnsd - The Tor TCP DNS Daemon
 
-basic setup (as root)
+Basic setup (as root) by hand:
  1) mkdir /var/run/ttdnsd
  2) cp /etc/tsocks.conf /var/run/ttdnsd
  3) cp ttdnsd.conf /var/run/ttdnsd
  4) TSOCKS_CONF_FILE=tsocks.conf ttdnsd -b 127.0.0.1 -p 53 -P /var/run/ttdnsd/pid
 
-more details at 
+Or use the Makefile:
+ 0) make install
+ 1) TSOCKS_CONF_FILE=tsocks.conf ttdnsd -b 127.0.0.1 -p 53 -P /var/run/ttdnsd/pid
+
+More details at:
  http://www.mulliner.org/collin/ttdnsd.php
 
