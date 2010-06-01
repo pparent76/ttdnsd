@@ -17,5 +17,5 @@ clean: resolvclean
 	rm -f main.o $(EXEC)
 
 install: all
-	cp $(EXEC) $(DESTDIR)
-	cp ttdnsd.conf $(DESTDIR)
+	cp $(EXEC) $(DESTDIR)/usr/sbin/
+	cp ttdnsd.conf $(DESTDIR)/etc/
