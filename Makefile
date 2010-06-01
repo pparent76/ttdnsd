@@ -1,19 +1,15 @@
 EXEC = ttdnsd
 
-all: main.c resolv
+all: main.c
 	$(CC) $(CFLAGS) main.c -o $(EXEC) -ltsocks -L$(STAGING_DIR)/usr/lib
 
-resolv:
-	cd ttdnstor; make; cp *.so.1 ..
-
-resolvclean:
-	rm -f *.so.1
-	cd ttdnstor; make clean
+notsocks:	
+	$(CC) $(CFLAGS) main.c -o $(EXEC) -L$(STAGING_DIR)/usr/lib
 
 static: main.c
 	$(CC) $(CFLAGS) main.c -o $(EXEC) $(STAGING_DIR)/usr/lib/libtsocks.a
 
-clean: resolvclean
+clean:
 	rm -f main.o $(EXEC)
 
 install: all

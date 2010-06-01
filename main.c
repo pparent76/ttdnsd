@@ -1,11 +1,12 @@
 /*
  *  The TOR TCP DNS Daemon
- *  (c) Collin R. Mulliner <collin(AT)mulliner.org>
+ *
+ *  Copyright (c) Collin R. Mulliner <collin(AT)mulliner.org>
+ *
  *  http://www.mulliner.org/collin/ttdnsd.php
  *
- *  License: GPLv2
- *
  */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -23,30 +24,60 @@
 #include <linux/if_tun.h>
 #include <arpa/inet.h>
 
+/*
+ *  binary is linked with libtsocks therefore all TCP connections will
+ *  be routed over TOR (if /etc/tsocks.conf is setup correctly)
+ *
+ *  see makefile about disableing tsocks (for testing)
+ *
+ */
+
+
 #define DEBUG 0
 
+// number of parallel connected tcp peers
 #define MAX_PEERS 1
+// request timeout
 #define MAX_TIME 3
+// number of trys per request (not used so far)
 #define MAX_TRY 1
-#define MAX_NAMESERVERS 512
-
+// maximal number of nameservers
+#define MAX_NAMESERVERS 32
+// request queue size (use a prime number for hashing)
 #define MAX_REQUESTS 499
 // 199, 1009
 
+typedef enum {
+	DEAD = 0,
+	CONNECTING,
+	CONNECTING2,
+	CONNECTED
+} CON_STATE;
+
+typedef enum {
+	WAITING = 0,
+	SENT
+} REQ_STATE;
+
 #define NOBODY 65534
+#define DEFAULT_BIND_PORT 53
 #define DEFAULT_BIND_IP "127.0.0.1"
 #define DEFAULT_RESOLVERS "ttdnsd.conf"
-#define DEFAULT_LOG "ttdnsd.debug"
+#define DEFAULT_LOG "ttdnsd.log"
 #define DEFAULT_CHROOT "/var/run/ttdnsd"
-#define TORIFY_CONF_ENV "TSOCKS_CONF_FILE"
+#define TSOCKS_CONF_ENV "TSOCKS_CONF_FILE"
+#define DEFAULT_PID_FILE "/var/run/ttdnsd.pid"
 
 #define HELP_STR ""\
-	"syntax: torify ttdnsd [bfcd]\n"\
-	"\t-b\t<local ip>\tbind to local ip\n"\
-	"\t-f\t<dns file>\tfilename to read dns server ip(s) from\n"\
+	"syntax: ttdnsd [bpfPcdl]\n"\
+	"\t-b\t<local ip>\tlocal IP to bind to\n"\
+	"\t-p\t<local port>\tbind to port\n"\
+	"\t-f\t<resolvers>\tfilename to read resolver IP(s) from\n"\
+	"\t-P\t<PID file>\tfile to store process ID\n"\
 	"\t-c\t\t\tDON'T chroot(2) to /var/run/ttdnsd\n"\
-	"\t-d\t\t\tDEBUG don't fork/chroot and print debug\n"\
-	"\t-l\t\t\tdon't write debug log (" DEFAULT_LOG ")\n"\
+	"\t-d\t\t\tDEBUG (don't fork and print debug)\n"\
+	"\t-l\t\t\twrite debug log to: " DEFAULT_LOG "\n\n"\
+	"export TSOCKS_CONF_FILE to point to config file inside the chroot\n"\
 	"\n"
 
 struct peer_t
@@ -54,7 +85,7 @@ struct peer_t
 	struct sockaddr_in tcp;
 	int tcp_fd;
 	time_t timeout;
-	int con; /**< connection state 0=dead, 1=connecting..., 3=connected */
+	CON_STATE con; /**< connection state 0=dead, 1=connecting..., 3=connected */
 	unsigned char b[1502]; /**< receive buffer */
 	int bl; /**< bytes in receive buffer */
 };
@@ -67,18 +98,21 @@ struct request_t
 	int bl; /**< bytes in request buffer */
 	int id; /**< dns request id */
 	int rid; /**< real dns request id */
-	int active; /**< 1=sent, 0=waiting for tcp to become connected */
+	REQ_STATE active; /**< 1=sent, 0=waiting for tcp to become connected */
 	time_t timeout; /**< timeout of request */
 };
 
-unsigned long int *nameservers; /**< nameservers pool */
-int num_nameservers; /**< number if nameservers */
+static unsigned long int *nameservers; /**< nameservers pool */
+static int num_nameservers; /**< number of nameservers */
 
-struct peer_t peers[MAX_PEERS]; /**< TCP peers */
-struct request_t requests[MAX_REQUESTS]; /**< requests queue */
-int udp_fd; /**< port 53 socket */
+static struct peer_t peers[MAX_PEERS]; /**< TCP peers */
+static struct request_t requests[MAX_REQUESTS]; /**< request queue */
+static int udp_fd; /**< port 53 socket */
 
-int request_find(int id)
+static int multipeer = 0;
+static int multireq = 0;
+
+static int request_find(int id)
 {
 	int pos = id % MAX_REQUESTS;
 	
@@ -98,14 +132,16 @@ int request_find(int id)
 	}
 }
 
-int peer_connect(int peer, int ns)
+static int peer_connect(int peer, int ns)
 {
 	struct peer_t *p = &peers[peer];
 	int r = 1;
 	int cs;
 		
-	if ((p->tcp_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+	if ((p->tcp_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+		printf("can't create TCP socket\n");
 		return 0;
+	}
 	
 	if (setsockopt(p->tcp_fd, SOL_SOCKET, SO_REUSEADDR, &r, sizeof(int))) printf("Setting SO_REUSEADDR failed\n");
 	if (fcntl(p->tcp_fd, F_SETFL, O_NONBLOCK)) printf("Setting O_NONBLOCK failed\n");
@@ -118,16 +154,16 @@ int peer_connect(int peer, int ns)
 	printf("connecting to: %s\n", inet_ntoa(p->tcp.sin_addr));
 	cs = connect(p->tcp_fd, (struct sockaddr*)&p->tcp, sizeof(struct sockaddr_in));
 
+	// we are in nonblock mode
 	if (cs != 0) perror("connect status:");
-	else printf("connect returned 0\n");
 
 	p->bl = 0;
-	p->con = 1;
+	p->con = CONNECTING;
 	
 	return 1;
 }
 
-int peer_connected(int peer)
+static int peer_connected(int peer)
 {
 	struct peer_t *p = &peers[peer];
 	int cs;
@@ -136,37 +172,36 @@ int peer_connected(int peer)
 	cs = connect(p->tcp_fd, (struct sockaddr*)&p->tcp, sizeof(struct sockaddr_in));
 	
 	if (cs == 0) {
-		p->con = 3;
+		p->con = CONNECTED;
 		return 1;
 	}
 	else {
 		printf("connection failed\n");
 		close(p->tcp_fd);
 		p->tcp_fd = -1;
-		p->con = 0;
+		p->con = DEAD;
 		return 0;
 	}
 }
 
-int peer_keepalive(int peer)
+static int peer_keepalive(int peer)
 {
 	return 1;
 }
 
-int peer_sendreq(int peer, int req)
+static int peer_sendreq(int peer, int req)
 {
 	struct peer_t *p = &peers[peer];
 	struct request_t *r = &requests[req];
 	int ret;
 
-	printf("%s\n", __FUNCTION__);
 
 	while ((ret = write(p->tcp_fd, r->b, (r->bl + 2))) < 0 && errno == EAGAIN);
 	
 	if (ret == 0) {
 		close(p->tcp_fd);
 		p->tcp_fd = -1;
-		p->con = 0;
+		p->con = DEAD;
 		printf("peer %d got disconnected\n", peer);
 		return 2;
 	}
@@ -174,7 +209,7 @@ int peer_sendreq(int peer, int req)
 	return 1;
 }
 
-int peer_readres(int peer)
+static int peer_readres(int peer)
 {
 	struct peer_t *p = &peers[peer];
 	struct request_t *r;
@@ -184,8 +219,7 @@ int peer_readres(int peer)
 	int req;
 	unsigned short int *l = (unsigned short int*)p->b;
 	int len;
-
-	//printf("%s\n", __FUNCTION__);
+	
 	
 	while ((ret = read(p->tcp_fd, (p->b + p->bl), (1502 - p->bl))) < 0 && errno == EAGAIN);
 
@@ -194,12 +228,13 @@ int peer_readres(int peer)
 		p->tcp_fd = -1;
 		
 		printf("peer %d got disconnected\n", peer);
-		p->con = 0;
+		p->con = DEAD;
 		return 3;
 	}
 	
 	p->bl += ret;
 
+	// get answer from receive buffer
 processanswer:
 
 	if (p->bl < 2) {
@@ -245,31 +280,29 @@ processanswer:
 	return 1;
 }
 
-void peer_handleoutstanding(int peer)
+static void peer_handleoutstanding(int peer)
 {
 	int i;
 
-	printf("%s\n", __FUNCTION__);
-
 	for (i = 0; i < MAX_REQUESTS; i++) {
-		if (requests[i].id != 0 && requests[i].active == 0) {
-			requests[i].active = 1;
+		if (requests[i].id != 0 && requests[i].active == WAITING) {
+			requests[i].active = SENT;
 			peer_sendreq(peer, i);
 		}
 	}
 }
 
-int peer_select()
+static int peer_select()
 {
 	return 0;
 }
 
-int ns_select()
+static int ns_select()
 {
 	return (rand()>>16) % num_nameservers;
 }
 
-int request_add(struct request_t *r)
+static int request_add(struct request_t *r)
 {
 	int pos = r->id % MAX_REQUESTS;
 	int dst_peer;
@@ -318,12 +351,14 @@ int request_add(struct request_t *r)
 	ul = (unsigned short int*)(r->b + 2);
 	*ul = htons(r->id);
 	
-	printf("using requests slot %d\n", pos);
+	printf("using request slot %d\n", pos);
 	memcpy((char*)&requests[pos], (char*)r, sizeof(struct request_t));
 
+	// nice feature to have: send request to multiple peers for speedup and reliability
+	
 	dst_peer = peer_select();
-	if (peers[dst_peer].con == 3) {
-		r->active = 1;
+	if (peers[dst_peer].con == CONNECTED) {
+		r->active = SENT;
 		return peer_sendreq(dst_peer, pos);
 	}
 	else {
@@ -331,7 +366,7 @@ int request_add(struct request_t *r)
 	}
 }
 
-int server(char *bind_ip)
+static int server(char *bind_ip, int bind_port)
 {
 	struct sockaddr_in udp;
 	struct pollfd pfd[MAX_PEERS+1];
@@ -344,24 +379,25 @@ int server(char *bind_ip)
 	for (i = 0; i < MAX_PEERS; i++) {
 		peers[i].tcp_fd = -1;
 		poll2peers[i] = -1;
-		peers[i].con = 0;
+		peers[i].con = DEAD;
 	}
 	memset((char*)requests, 0, sizeof(requests));
 
+	// setup listing port
 	if ((udp_fd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
+		printf("can't create UDP socket\n");
 		return(-1);
 	}
-	
 	memset((char*)&udp, 0, sizeof(struct sockaddr_in));
 	udp.sin_family = AF_INET;
-	udp.sin_port = htons(53);
+	udp.sin_port = htons(bind_port);
 	if (!inet_aton(bind_ip, (struct in_addr*)&udp.sin_addr)) {
-		printf("is not a valid ip address: %s\n", bind_ip);
-		return 0;
+		printf("is not a valid IPv4 address: %s\n", bind_ip);
+		return(0);
 	}
 	if (bind(udp_fd, (struct sockaddr*)&udp, sizeof(struct sockaddr_in)) < 0) {
 		close(udp_fd);
-		printf("can't bind to %s:%d\n", bind_ip, 53);
+		printf("can't bind to %s:%d\n", bind_ip, bind_port);
 		return(-1);
 	}
 
@@ -372,13 +408,12 @@ int server(char *bind_ip)
 	}
 		
 	for (;;) {
-	
 		// populate poll array
 		for (pfd_num = 1, i = 0; i < MAX_PEERS; i++) {	
 			if (peers[i].tcp_fd != -1) {
 				pfd[pfd_num].fd = peers[i].tcp_fd;
 				switch (peers[i].con) {
-				case 3:
+				case CONNECTED:
 					pfd[pfd_num].events = POLLIN|POLLPRI;
 					break;
 				default:
@@ -406,11 +441,11 @@ int server(char *bind_ip)
 					== POLLOUT || (pfd[i].revents & POLLERR) == POLLERR)) {
 				
 				switch (peers[poll2peers[i-1]].con) {
-				case 3:
+				case CONNECTED:
 					peer_readres(poll2peers[i-1]);
 					break;
-				case 1:
-				case 2:
+				case CONNECTING:
+				case CONNECTING2:
 					if (peer_connected(poll2peers[i-1])) {
 						peer_handleoutstanding(poll2peers[i-1]);
 					}
@@ -422,6 +457,7 @@ int server(char *bind_ip)
 			}
 		}
 	
+		// handle port 53
 		if ((pfd[0].revents & POLLIN) == POLLIN || (pfd[0].revents & POLLPRI) == POLLPRI) {
 			unsigned short int *ul;
 			
@@ -432,7 +468,7 @@ int server(char *bind_ip)
 			// get request id
 			ul = (unsigned short int*) (tmp.b + 2);
 			tmp.rid = tmp.id = ntohs(*ul);
-			// set request length
+			// get request length
 			ul = (unsigned short int*)tmp.b;
 			*ul = htons(tmp.bl);
 			
@@ -443,7 +479,7 @@ int server(char *bind_ip)
 	}
 }
 
-int load_nameservers(char *filename)
+static int load_nameservers(char *filename)
 {
 	FILE *fp;
 	char line[1025] = {0};
@@ -476,7 +512,7 @@ int load_nameservers(char *filename)
 			}
 		}
 		else {
-			printf("%s: is not a valid ipv4 address\n", line);
+			printf("%s: is not a valid IPv4 address\n", line);
 		}
 	}
 	fclose(fp);
@@ -492,27 +528,45 @@ int main(int argc, char **argv)
 	int debug = 0;
 	int dochroot = 1;
 	char resolvers[250] = {DEFAULT_RESOLVERS};
-	char bind_ip[50] = {DEFAULT_BIND_IP};
-	int log = 1;
+	char bind_ip[250] = {DEFAULT_BIND_IP};
+	int log = 0;
+	int bind_port = DEFAULT_BIND_PORT;
+	int devnull;
+	char pid_file[250] = {0};
 	
-	while ((opt = getopt(argc, argv, "hdclb:f:")) != EOF) {
+	
+	while ((opt = getopt(argc, argv, "lhdcb:f:p:P:")) != EOF) {
 		switch (opt) {
+		// log debug to file
+		case 'l':
+			log = 1;
+			break;
+		// debug
 		case 'd':
 			debug = 1;
-			dochroot = 0;
 			break;
+		// DON'T chroot
 		case 'c':
 			dochroot = 0;
 			break;
-		case 'l':
-			log = 0;
+		// PORT
+		case 'p':
+			bind_port = atoi(optarg);
+			if (bind_port < 1) bind_port = DEFAULT_BIND_PORT;
 			break;
+		// config file
 		case 'f':
 			strncpy(resolvers, optarg, sizeof(resolvers)-1);
 			break;
+		// IP
 		case 'b':
 			strncpy(bind_ip, optarg, sizeof(bind_ip)-1);
 			break;
+		// PID file
+		case 'P':
+			strncpy(pid_file, optarg, sizeof(pid_file)-1);
+			break;
+		// help
 		case 'h':
 		default:
 			printf(HELP_STR);
@@ -523,39 +577,42 @@ int main(int argc, char **argv)
 
 	srand(time(NULL));
 	
-	if (getuid() != 0) {
-		printf("need to run as root to bind to port 53 and for using chroot(2)\n");
+	if (getuid() != 0 && (bind_port == DEFAULT_BIND_PORT || dochroot == 1)) {
+		printf("need to run as root to bind to port 53 and chroot(2)\n");
 		exit(1);
 	}
 
 	if (!load_nameservers(resolvers)) {
-		printf("can't open resolvers file %s, try again after chroot\n", resolvers);
+		printf("can't open resolvers file %s, will try again after chroot\n", resolvers);
 	}
 
+	devnull = open("/dev/null", O_RDWR);
+	if (devnull < 0) {
+		printf("can't open /dev/null, exit\n");
+		exit(1);
+	}
+
+	// become a daemon
 	if (!debug) {
 		if (fork()) exit(0);
-		
-		if (log) {
-			int fd;
-			int lfd;
-			lfd = open(DEFAULT_CHROOT"/"DEFAULT_LOG, O_WRONLY|O_APPEND|O_CREAT, 00644);
-			dup2(lfd, 1);
-			dup2(lfd, 2);
-			close(lfd);
-			fd = open("/dev/null", O_RDWR);
-			dup2(fd, 0);
-			close(fd);
-		}
-		else {
-			int fd;
-			fd = open("/dev/null", O_RDWR);
-			dup2(fd, 0);
-			dup2(fd, 1);
-			dup2(fd, 2);
-			close(fd);
-		}
-		
 		setsid();
+	}
+
+	// write PID to file
+	if (strlen(pid_file) > 0) {
+		int pfd = open(pid_file, O_WRONLY|O_TRUNC|O_CREAT, 00644);
+		if (pfd < 0) {
+			printf("can't open pid file %s, exit\n", pid_file);
+			exit(1);
+		}
+		FILE *pf = fdopen(pfd, "w");
+		if (pf == NULL) {
+			printf("can't reopen pid file %s, exit\n", pid_file);
+			exit(1);
+		}
+		fprintf(pf, "%d", getpid());
+		fclose(pf);
+		close(pfd);
 	}
 	
 	if (dochroot) {	
@@ -567,16 +624,37 @@ int main(int argc, char **argv)
 			printf("can't chroot to %s, exit\n", DEFAULT_CHROOT);
 			exit(1);
 		}
-		
-		if (access(getenv(TORIFY_CONF_ENV), R_OK)) {
-			printf("chrooted to %s can't open torify config %s, exit\n", DEFAULT_CHROOT, getenv(TORIFY_CONF_ENV));
+		// since we chroot, check for the tsocks config
+		if (access(getenv(TSOCKS_CONF_ENV), R_OK)) {
+			printf("chroot=%s, can't access tsocks config at %s, exit\n", DEFAULT_CHROOT, getenv(TSOCKS_CONF_ENV));
 			exit(1);
 		}
+	}
 		
-		// privs will be dropped in server right after binding to port:53
+	// privs will be dropped in server right after binding to port 53	
+	
+	if (log) {
+		int lfd;
+		lfd = open(DEFAULT_LOG, O_WRONLY|O_APPEND|O_CREAT, 00644);
+		if (lfd < 0) {
+			if (dochroot) printf("chroot=%s ", DEFAULT_CHROOT);
+			printf("can't open log file %s, exit\n", DEFAULT_LOG);
+			exit(1);
+		}
+		dup2(lfd, 1);
+		dup2(lfd, 2);
+		close(lfd);
+		dup2(devnull, 0);
+		close(devnull);
+	}
+	else if (!debug) {
+		dup2(devnull, 0);
+		dup2(devnull, 1);
+		dup2(devnull, 2);
+		close(devnull);
 	}
 
-	server(bind_ip);
+	server(bind_ip, bind_port);
 	
 	exit(0);
 }

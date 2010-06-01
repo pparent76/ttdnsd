@@ -1,3 +1,10 @@
+v0.3 Jun. 1. 2010
+ - added a couple of features
+ - source cleanup and documentation
+ - license changed in order to be included with TOR
+ - linked to libtsocks to get rid of the tsocks wrapper
+ - removed libttdnstor.so it is not needed
+
 v0.2 Jul. 22. 2007
  - added libttdnstor.so
    this is an LD_PRELOAD library for redirecting open/fopen to 
