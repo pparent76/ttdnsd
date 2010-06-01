@@ -30,11 +30,11 @@ clean:
 
 install: all
 	strip $(EXEC)
-	-mkdir $(DESTDIR)$(CHROOT)
+	test -d $(DESTDIR)$(CHROOT) || -mkdir $(DESTDIR)$(CHROOT)
 	cp $(CONF) $(DESTDIR)$(CHROOT)
 	cp $(TORTSOCKSCONF) $(DESTDIR)$(CHROOT)/tsocks.conf
-	cp $(EXEC) $(DESTDIR)/usr/sbin/
+	cp $(EXEC) $(DESTDIR)/sbin/
 
 uninstall: all
-	rm $(DESTDIR)/usr/sbin/$(EXEC)
+	rm $(DESTDIR)/sbin/$(EXEC)
 	rm -ri $(DESTDIR)$(CHROOT)
