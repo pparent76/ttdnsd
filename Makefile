@@ -8,8 +8,12 @@ TSOCKSLIB = tsocks
 SRCFILES := $(wildcard *.c)
 OBJFILES := $(patsubst %.c,%.o,$(wildcard *.c))
 
+# Build host specific additionals.  Uncomment whatever matches your situation.
+# For BSD's with pkgsrc:
+#EXTRA_CFLAGS = -I /usr/pkg/include -L /usr/pkg/lib
+
 # Hardening and warnings for building with gcc
-CFLAGS=-O2 -D_FORTIFY_SOURCE=2 -fstack-protector-all -fwrapv -fPIE -Wstack-protector -Wformat -Wformat-security -Wpointer-sign -Wall
+CFLAGS=-O2 $(EXTRA_CFLAGS) -D_FORTIFY_SOURCE=2 -fstack-protector-all -fwrapv -fPIE -Wstack-protector -Wformat -Wformat-security -Wpointer-sign -Wall
 LDFLAGS= -pie -z relro -z now
 
 all: $(SRCFILES)
