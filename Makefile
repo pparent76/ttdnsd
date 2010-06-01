@@ -28,4 +28,3 @@ install: all
 	mkdir $(DESTDIR)/$(CHROOT)
 	cp $(CONF) $(DESTDIR)/$(CHROOT)
 	cp $(EXEC) $(DESTDIR)/usr/sbin/
-	cp $(CONF) $(DESTDIR)/etc/
