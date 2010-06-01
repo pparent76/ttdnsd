@@ -2,7 +2,7 @@ EXEC = ttdnsd
 CC = /usr/bin/gcc
 CHROOT = /var/run/ttdnsd/
 CONF = ttdnsd.conf
-TORTSOCKSCONF = /etc/tor/tor-tsocks.conf
+TORTSOCKSCONF = tor-tsocks.conf
 TSOCKSLIB = tsocks
 # If the program ever grows, we'll enjoy this macro:
 SRCFILES := $(wildcard *.c)
