@@ -60,6 +60,7 @@ typedef enum {
 } REQ_STATE;
 
 #define NOBODY 65534
+#define NOGROUP 65534
 #define DEFAULT_BIND_PORT 53
 #define DEFAULT_BIND_IP "127.0.0.1"
 #define DEFAULT_RESOLVERS "ttdnsd.conf"
@@ -408,7 +409,7 @@ static int server(char *bind_ip, int bind_port)
 
 	// drop privileges
 	if (!DEBUG) {
-		setgid(NOBODY);
+		setgid(NOGROUP);
 		setuid(NOBODY);
 	}
 		
