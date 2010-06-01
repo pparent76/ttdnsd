@@ -24,6 +24,7 @@ clean:
 	rm -f $(OBJFILES) $(EXEC)
 
 install: all
+	strip $(EXEC)
 	mkdir $(DESTDIR)/$(CHROOT)
 	cp $(CONF) $(DESTDIR)/$(CHROOT)
 	cp $(EXEC) $(DESTDIR)/usr/sbin/
