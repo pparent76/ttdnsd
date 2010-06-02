@@ -31,7 +31,7 @@ clean:
 
 install: all
 	strip $(EXEC)
-	test -d $(DESTDIR)$(CHROOT) || -mkdir $(DESTDIR)$(CHROOT)
+	test -d $(DESTDIR)$(CHROOT) || -mkdir -p $(DESTDIR)$(CHROOT)
 	cp $(CONF) $(DESTDIR)$(CHROOT)
 	cp $(TORTSOCKSCONF) $(DESTDIR)$(CHROOT)/tsocks.conf
 	cp $(EXEC) $(DESTDIR)/sbin/
