@@ -1,3 +1,5 @@
-main.c		:	the source to ttdnsd
-Makefile	:	makefile to build ttdnsd
-package		:	the buildroot compatible build files
+ttdnsd.c    :   The source to ttdnsd
+Makefile    :   Makefile to build ttdnsd
+package     :   The buildroot compatible build files
+tor-tsocks.conf : Default tsocks config for a standard Tor configuration
+ttdnsd.conf :   Default ttdnsd configuration file
