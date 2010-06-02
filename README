@@ -3,6 +3,7 @@ ttdnsd - The Tor TCP DNS Daemon
 Supported platforms:
     Debian Gnu/Linux
     Probably other Linux{es,en}
+    NetBSD
 
 Currently unsupported platforms:
     Mac OS X
@@ -23,4 +24,7 @@ Or use the Makefile:
 
 More details at:
  http://www.mulliner.org/collin/ttdnsd.php
+
+The Current development git tree can be found here:
+ https://gitweb.torproject.org/ioerror/tor-extra.git/shortlog/refs/heads/ttdnsd
 
