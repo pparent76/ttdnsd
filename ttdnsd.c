@@ -25,7 +25,7 @@
 
 /*
  *  binary is linked with libtsocks therefore all TCP connections will
- *  be routed over Tor (if /etc/tsocks.conf is setup correctly)
+ *  be routed over Tor (if tsocks.conf is setup to chain with Tor)
  *
  *  see makefile about disableing tsocks (for testing)
  *
