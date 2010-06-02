@@ -580,10 +580,10 @@ int main(int argc, char **argv)
 		}
 	}
 
-	srand(time(NULL));
+	srand(time(NULL)); // What the hell?
 	
 	if (getuid() != 0 && (bind_port == DEFAULT_BIND_PORT || dochroot == 1)) {
-		printf("need to run as root to bind to port 53 and chroot(2)\n");
+		printf("ttdnsd must run as root to bind to port 53 and chroot(2)\n");
 		exit(1);
 	}
 
@@ -591,7 +591,7 @@ int main(int argc, char **argv)
 		printf("can't open resolvers file %s, will try again after chroot\n", resolvers);
 	}
 
-	devnull = open("/dev/null", O_RDWR);
+	devnull = open("/dev/null", O_RDWR); // Leaked fd?
 	if (devnull < 0) {
 		printf("can't open /dev/null, exit\n");
 		exit(1);
@@ -599,10 +599,11 @@ int main(int argc, char **argv)
 
 	// become a daemon
 	if (!debug) {
-		if (fork()) exit(0);
-		setsid();
+		if (fork()) exit(0); // Could be clearer
+		setsid(); // Safe?
 	}
 
+    /* Why does this happen before the chroot? */
 	// write PID to file
 	if (strlen(pid_file) > 0) {
 		int pfd = open(pid_file, O_WRONLY|O_TRUNC|O_CREAT, 00644);
@@ -630,8 +631,8 @@ int main(int argc, char **argv)
 			exit(1);
 		}
 		// since we chroot, check for the tsocks config
-		if (access(getenv(TSOCKS_CONF_ENV), R_OK)) {
-			printf("chroot=%s, can't access tsocks config at %s, exit\n", DEFAULT_CHROOT, getenv(TSOCKS_CONF_ENV));
+		if (access(getenv(TSOCKS_CONF_ENV), R_OK)) { // Unsanitized input to access()
+			printf("chroot=%s, can't access tsocks config at %s, exit\n", DEFAULT_CHROOT, getenv(TSOCKS_CONF_ENV)); // Unsanitized input to printf as a %s
 			exit(1);
 		}
 	}
