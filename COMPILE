@@ -1,2 +1,12 @@
-You need GNU Make.
-You also need the tsocks library.
+You need GNU Make:
+
+    http://www.gnu.org/software/make/
+
+You also need the tsocks library:
+
+    http://tsocks.sourceforge.net/
+
+In the future, it may be possible to use the Torsocks library:
+
+    http://code.google.com/p/torsocks/
+
