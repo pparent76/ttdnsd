@@ -4,9 +4,9 @@ Supported platforms:
     Debian Gnu/Linux
     Probably other Linux{es,en}
     NetBSD
+    Mac OS X
 
 Currently unsupported platforms:
-    Mac OS X
     Windows
     Plan 9
 
