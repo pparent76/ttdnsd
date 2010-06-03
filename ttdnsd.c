@@ -537,6 +537,7 @@ int main(int argc, char **argv)
 	char resolvers[250] = {DEFAULT_RESOLVERS};
 	char bind_ip[250] = {DEFAULT_BIND_IP};
 	char chroot_dir[PATH_MAX] = {DEFAULT_CHROOT};
+	char tsocks_conf[PATH_MAX];
 	int log = 0;
 	int bind_port = DEFAULT_BIND_PORT;
 	int devnull;
@@ -638,8 +639,10 @@ int main(int argc, char **argv)
 			exit(1);
 		}
 		// since we chroot, check for the tsocks config
-		if (access(getenv(TSOCKS_CONF_ENV), R_OK)) { // Unsanitized input to access()
-			printf("chroot=%s, can't access tsocks config at %s, exit\n", chroot_dir, getenv(TSOCKS_CONF_ENV)); // Unsanitized input to printf as a %s
+        strncpy(tsocks_conf, getenv(TSOCKS_CONF_ENV), PATH_MAX-1);
+        tsocks_conf[PATH_MAX-1] = '\0';
+		if (access(tsocks_conf, R_OK)) {
+			printf("chroot=%s, can't access tsocks config at %s, exit\n", chroot_dir, tsocks_conf);
 			exit(1);
 		}
 	}
