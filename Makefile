@@ -14,8 +14,12 @@ OBJFILES := $(patsubst %.c,%.o,$(wildcard *.c))
 #EXTRA_CFLAGS = -I /usr/pkg/include -L /usr/pkg/lib
 
 # Hardening and warnings for building with gcc
-CFLAGS=-O2 $(EXTRA_CFLAGS) -D_FORTIFY_SOURCE=2 -fstack-protector-all -fwrapv -fPIE -Wstack-protector -Wformat -Wformat-security -Wpointer-sign -Wall
-LDFLAGS= -pie -z relro -z now
+GCCWARNINGS = -Wall -fno-strict-aliasing -W -Wfloat-equal -Wundef -Wpointer-arith -Wstrict-prototypes -Wmissing-prototypes -Wwrite-strings -Wredundant-decls -Wchar-subscripts -Wcomment -Wformat=2 -Wwrite-strings -Wmissing-declarations -Wredundant-decls -Wnested-externs -Wbad-function-cast -Wswitch-enum -Werror -Winit-self -Wmissing-field-initializers -Wdeclaration-after-statement -Wold-style-definition -Waddress -Wmissing-noreturn -Wnormalized=id -Woverride-init -Wstrict-overflow=1 -Wextra -Warray-bounds -Wstack-protector -Wformat -Wformat-security -Wpointer-sign
+GCCHARDENING=-D_FORTIFY_SOURCE=2 -fstack-protector-all -fwrapv -fPIE --param ssp-buffer-size=1
+LDHARDENING=-pie -z relro -z now
+
+CFLAGS=-g -O2 $(EXTRA_CFLAGS) $(GCCHARDENING) $(GCCWARNINGS)
+LDFLAGS= $(LDHARDENING)
 
 all: $(SRCFILES)
 	$(CC) $(CFLAGS) $(SRCFILES) -o $(EXEC) -l$(TSOCKSLIB) -l$(OPENSSLLIB) -L$(STAGING_DIR)/usr/lib
