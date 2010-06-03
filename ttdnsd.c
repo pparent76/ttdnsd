@@ -2,6 +2,7 @@
  *  The Tor TCP DNS Daemon
  *
  *  Copyright (c) Collin R. Mulliner <collin(AT)mulliner.org>
+ *  Copyright (c) 2010, The Tor Project, Inc.
  *
  *  http://www.mulliner.org/collin/ttdnsd.php
  *

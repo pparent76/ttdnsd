@@ -1,6 +1,12 @@
-/* Various things for ttdnsd
- * Copyright (c) 2010, The Tor Project, Inc.
- * See LICENSE for licensing information */
+/*
+ *  The Tor TCP DNS Daemon
+ *
+ *  Copyright (c) Collin R. Mulliner <collin(AT)mulliner.org>
+ *  Copyright (c) 2010, The Tor Project, Inc.
+ *
+ *  http://www.mulliner.org/collin/ttdnsd.php
+ *
+ */
 
 #define DEBUG 0
 
