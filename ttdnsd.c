@@ -65,8 +65,9 @@ typedef enum {
 #define DEFAULT_RESOLVERS "ttdnsd.conf"
 #define DEFAULT_LOG "ttdnsd.log"
 #define DEFAULT_CHROOT "/var/run/ttdnsd"
+#define DEFAULT_TSOCKS_CONF "tsocks.conf"
 #define TSOCKS_CONF_ENV "TSOCKS_CONF_FILE"
-#define DEFAULT_PID_FILE "/var/run/ttdnsd.pid"
+#define DEFAULT_PID_FILE DEFAULT_CHROOT"/ttdnsd.pid"
 
 #define HELP_STR ""\
 	"syntax: ttdnsd [bpfPcdl]\n"\
@@ -74,6 +75,7 @@ typedef enum {
 	"\t-p\t<local port>\tbind to port\n"\
 	"\t-f\t<resolvers>\tfilename to read resolver IP(s) from\n"\
 	"\t-P\t<PID file>\tfile to store process ID\n"\
+	"\t-C\t<chroot dir>\tchroot(2) to <chroot dir>\n"\
 	"\t-c\t\t\tDON'T chroot(2) to /var/run/ttdnsd\n"\
 	"\t-d\t\t\tDEBUG (don't fork and print debug)\n"\
 	"\t-l\t\t\twrite debug log to: " DEFAULT_LOG "\n\n"\
@@ -534,13 +536,14 @@ int main(int argc, char **argv)
 	int dochroot = 1;
 	char resolvers[250] = {DEFAULT_RESOLVERS};
 	char bind_ip[250] = {DEFAULT_BIND_IP};
+	char chroot_dir[PATH_MAX] = {DEFAULT_CHROOT};
 	int log = 0;
 	int bind_port = DEFAULT_BIND_PORT;
 	int devnull;
 	char pid_file[250] = {0};
 	
 	
-	while ((opt = getopt(argc, argv, "lhdcb:f:p:P:")) != EOF) {
+	while ((opt = getopt(argc, argv, "lhdcC:b:f:p:P:")) != EOF) {
 		switch (opt) {
 		// log debug to file
 		case 'l':
@@ -555,6 +558,10 @@ int main(int argc, char **argv)
 			dochroot = 0;
 			break;
 		// PORT
+		// Chroot directory
+		case 'C':
+			strncpy(chroot_dir, optarg, sizeof(chroot_dir)-1);
+			break;
 		case 'p':
 			bind_port = atoi(optarg);
 			if (bind_port < 1) bind_port = DEFAULT_BIND_PORT;
@@ -580,7 +587,7 @@ int main(int argc, char **argv)
 		}
 	}
 
-	srand(time(NULL)); // What the hell?
+	srand(time(NULL)); // This should use OpenSSL in the future
 	
 	if (getuid() != 0 && (bind_port == DEFAULT_BIND_PORT || dochroot == 1)) {
 		printf("ttdnsd must run as root to bind to port 53 and chroot(2)\n");
@@ -622,17 +629,17 @@ int main(int argc, char **argv)
 	}
 	
 	if (dochroot) {	
-		if (chdir(DEFAULT_CHROOT)) {
-			printf("can't chdir to %s, exit\n", DEFAULT_CHROOT);
+		if (chdir(chroot_dir)) {
+			printf("can't chdir to %s, exit\n", chroot_dir);
 			exit(1);
 		}
-		if (chroot(DEFAULT_CHROOT)) {
-			printf("can't chroot to %s, exit\n", DEFAULT_CHROOT);
+		if (chroot(chroot_dir)) {
+			printf("can't chroot to %s, exit\n", chroot_dir);
 			exit(1);
 		}
 		// since we chroot, check for the tsocks config
 		if (access(getenv(TSOCKS_CONF_ENV), R_OK)) { // Unsanitized input to access()
-			printf("chroot=%s, can't access tsocks config at %s, exit\n", DEFAULT_CHROOT, getenv(TSOCKS_CONF_ENV)); // Unsanitized input to printf as a %s
+			printf("chroot=%s, can't access tsocks config at %s, exit\n", chroot_dir, getenv(TSOCKS_CONF_ENV)); // Unsanitized input to printf as a %s
 			exit(1);
 		}
 	}
@@ -643,7 +650,7 @@ int main(int argc, char **argv)
 		int lfd;
 		lfd = open(DEFAULT_LOG, O_WRONLY|O_APPEND|O_CREAT, 00644);
 		if (lfd < 0) {
-			if (dochroot) printf("chroot=%s ", DEFAULT_CHROOT);
+			if (dochroot) printf("chroot=%s ", chroot_dir);
 			printf("can't open log file %s, exit\n", DEFAULT_LOG);
 			exit(1);
 		}
