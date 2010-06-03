@@ -641,7 +641,7 @@ int main(int argc, char **argv)
 		// since we chroot, check for the tsocks config
         strncpy(tsocks_conf, getenv(TSOCKS_CONF_ENV), PATH_MAX-1);
         tsocks_conf[PATH_MAX-1] = '\0';
-		if (access(tsocks_conf, R_OK)) {
+		if (access(tsocks_conf, R_OK)) { /* access() is a race condition and unsafe */
 			printf("chroot=%s, can't access tsocks config at %s, exit\n", chroot_dir, tsocks_conf);
 			exit(1);
 		}
