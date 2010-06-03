@@ -74,7 +74,7 @@ typedef enum {
 	"\t-b\t<local ip>\tlocal IP to bind to\n"\
 	"\t-p\t<local port>\tbind to port\n"\
 	"\t-f\t<resolvers>\tfilename to read resolver IP(s) from\n"\
-	"\t-P\t<PID file>\tfile to store process ID\n"\
+	"\t-P\t<PID file>\tfile to store process ID - pre-chroot\n"\
 	"\t-C\t<chroot dir>\tchroot(2) to <chroot dir>\n"\
 	"\t-c\t\t\tDON'T chroot(2) to /var/run/ttdnsd\n"\
 	"\t-d\t\t\tDEBUG (don't fork and print debug)\n"\
