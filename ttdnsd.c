@@ -22,6 +22,7 @@
 #include <netdb.h>
 #include <net/if.h>
 #include <arpa/inet.h>
+#include "ttdnsd.h"
 
 /*
  *  binary is linked with libtsocks therefore all TCP connections will
@@ -31,57 +32,6 @@
  *
  */
 
-
-#define DEBUG 0
-
-// number of parallel connected tcp peers
-#define MAX_PEERS 1
-// request timeout
-#define MAX_TIME 3
-// number of trys per request (not used so far)
-#define MAX_TRY 1
-// maximal number of nameservers
-#define MAX_NAMESERVERS 32
-// request queue size (use a prime number for hashing)
-#define MAX_REQUESTS 499
-// 199, 1009
-
-typedef enum {
-	DEAD = 0,
-	CONNECTING,
-	CONNECTING2,
-	CONNECTED
-} CON_STATE;
-
-typedef enum {
-	WAITING = 0,
-	SENT
-} REQ_STATE;
-
-#define NOBODY 65534
-#define NOGROUP 65534
-#define DEFAULT_BIND_PORT 53
-#define DEFAULT_BIND_IP "127.0.0.1"
-#define DEFAULT_RESOLVERS "ttdnsd.conf"
-#define DEFAULT_LOG "ttdnsd.log"
-#define DEFAULT_CHROOT "/var/run/ttdnsd"
-#define DEFAULT_TSOCKS_CONF "tsocks.conf"
-#define TSOCKS_CONF_ENV "TSOCKS_CONF_FILE"
-#define DEFAULT_PID_FILE DEFAULT_CHROOT"/ttdnsd.pid"
-
-#define HELP_STR ""\
-	"syntax: ttdnsd [bpfPcdl]\n"\
-	"\t-b\t<local ip>\tlocal IP to bind to\n"\
-	"\t-p\t<local port>\tbind to port\n"\
-	"\t-f\t<resolvers>\tfilename to read resolver IP(s) from\n"\
-	"\t-P\t<PID file>\tfile to store process ID - pre-chroot\n"\
-	"\t-C\t<chroot dir>\tchroot(2) to <chroot dir>\n"\
-	"\t-c\t\t\tDON'T chroot(2) to /var/run/ttdnsd\n"\
-	"\t-d\t\t\tDEBUG (don't fork and print debug)\n"\
-	"\t-l\t\t\twrite debug log to: " DEFAULT_LOG "\n\n"\
-	"export TSOCKS_CONF_FILE to point to config file inside the chroot\n"\
-	"\n"
-
 struct peer_t
 {
 	struct sockaddr_in tcp;
@@ -90,18 +40,6 @@ struct peer_t
 	CON_STATE con; /**< connection state 0=dead, 1=connecting..., 3=connected */
 	unsigned char b[1502]; /**< receive buffer */
 	int bl; /**< bytes in receive buffer */
-};
-
-struct request_t
-{
-	struct sockaddr_in a;
-	socklen_t al;
-	unsigned char b[1502]; /**< request buffer */
-	int bl; /**< bytes in request buffer */
-	int id; /**< dns request id */
-	int rid; /**< real dns request id */
-	REQ_STATE active; /**< 1=sent, 0=waiting for tcp to become connected */
-	time_t timeout; /**< timeout of request */
 };
 
 static unsigned long int *nameservers; /**< nameservers pool */
@@ -117,7 +55,7 @@ static int multipeer = 0;
 static int multireq = 0;
 */
 
-static int request_find(int id)
+int request_find(int id)
 {
 	int pos = id % MAX_REQUESTS;
 	
@@ -137,7 +75,7 @@ static int request_find(int id)
 	}
 }
 
-static int peer_connect(int peer, int ns)
+int peer_connect(int peer, int ns)
 {
 	struct peer_t *p = &peers[peer];
 	int r = 1;
@@ -168,7 +106,7 @@ static int peer_connect(int peer, int ns)
 	return 1;
 }
 
-static int peer_connected(int peer)
+int peer_connected(int peer)
 {
 	struct peer_t *p = &peers[peer];
 	int cs;
@@ -190,13 +128,13 @@ static int peer_connected(int peer)
 }
 
 /*
-static int peer_keepalive(int peer)
+int peer_keepalive(int peer)
 {
 	return 1;
 }
 */
 
-static int peer_sendreq(int peer, int req)
+int peer_sendreq(int peer, int req)
 {
 	struct peer_t *p = &peers[peer];
 	struct request_t *r = &requests[req];
@@ -216,7 +154,7 @@ static int peer_sendreq(int peer, int req)
 	return 1;
 }
 
-static int peer_readres(int peer)
+int peer_readres(int peer)
 {
 	struct peer_t *p = &peers[peer];
 	struct request_t *r;
@@ -287,7 +225,7 @@ processanswer:
 	return 1;
 }
 
-static void peer_handleoutstanding(int peer)
+void peer_handleoutstanding(int peer)
 {
 	int i;
 
@@ -299,17 +237,17 @@ static void peer_handleoutstanding(int peer)
 	}
 }
 
-static int peer_select()
+int peer_select(void)
 {
 	return 0;
 }
 
-static int ns_select()
+int ns_select(void)
 {
 	return (rand()>>16) % num_nameservers;
 }
 
-static int request_add(struct request_t *r)
+int request_add(struct request_t *r)
 {
 	int pos = r->id % MAX_REQUESTS;
 	int dst_peer;
@@ -373,7 +311,7 @@ static int request_add(struct request_t *r)
 	}
 }
 
-static int server(char *bind_ip, int bind_port)
+int server(char *bind_ip, int bind_port)
 {
 	struct sockaddr_in udp;
 	struct pollfd pfd[MAX_PEERS+1];
@@ -423,6 +361,15 @@ static int server(char *bind_ip, int bind_port)
 				case CONNECTED:
 					pfd[pfd_num].events = POLLIN|POLLPRI;
 					break;
+                case DEAD:
+                    pfd[pfd_num].events = POLLOUT|POLLERR;
+                    break;
+                case CONNECTING:
+                    pfd[pfd_num].events = POLLOUT|POLLERR;
+                    break;
+                case CONNECTING2:
+                    pfd[pfd_num].events = POLLOUT|POLLERR;
+                    break;
 				default:
 					pfd[pfd_num].events = POLLOUT|POLLERR;
 					break;
@@ -457,6 +404,9 @@ static int server(char *bind_ip, int bind_port)
 						peer_handleoutstanding(poll2peers[i-1]);
 					}
 					break;
+                case DEAD:
+                    printf("peer %d in bad state\n", peers[poll2peers[i-1]].con);
+                    break;
 				default:
 					printf("peer %d in bad state\n", peers[poll2peers[i-1]].con);
 					break;
@@ -486,7 +436,7 @@ static int server(char *bind_ip, int bind_port)
 	}
 }
 
-static int load_nameservers(char *filename)
+int load_nameservers(char *filename)
 {
 	FILE *fp;
 	char line[1025] = {0};
@@ -542,6 +492,7 @@ int main(int argc, char **argv)
 	int bind_port = DEFAULT_BIND_PORT;
 	int devnull;
 	char pid_file[250] = {0};
+    FILE *pf;
 	
 	
 	while ((opt = getopt(argc, argv, "lhdcC:b:f:p:P:")) != EOF) {
@@ -619,7 +570,7 @@ int main(int argc, char **argv)
 			printf("can't open pid file %s, exit\n", pid_file);
 			exit(1);
 		}
-		FILE *pf = fdopen(pfd, "w");
+		pf = fdopen(pfd, "w");
 		if (pf == NULL) {
 			printf("can't reopen pid file %s, exit\n", pid_file);
 			exit(1);
