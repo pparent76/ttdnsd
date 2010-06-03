@@ -14,11 +14,11 @@ OBJFILES := $(patsubst %.c,%.o,$(wildcard *.c))
 #EXTRA_CFLAGS = -I /usr/pkg/include -L /usr/pkg/lib
 
 # Hardening and warnings for building with gcc
-GCCWARNINGS = -Wall -fno-strict-aliasing -W -Wfloat-equal -Wundef -Wpointer-arith -Wstrict-prototypes -Wmissing-prototypes -Wwrite-strings -Wredundant-decls -Wchar-subscripts -Wcomment -Wformat=2 -Wwrite-strings -Wmissing-declarations -Wredundant-decls -Wnested-externs -Wbad-function-cast -Wswitch-enum -Werror -Winit-self -Wmissing-field-initializers -Wdeclaration-after-statement -Wold-style-definition -Waddress -Wmissing-noreturn -Wnormalized=id -Woverride-init -Wstrict-overflow=1 -Wextra -Warray-bounds -Wstack-protector -Wformat -Wformat-security -Wpointer-sign
+GCCWARNINGS = -Wall -fno-strict-aliasing -W -Wfloat-equal -Wundef -Wpointer-arith -Wstrict-prototypes -Wmissing-prototypes -Wwrite-strings -Wredundant-decls -Wchar-subscripts -Wcomment -Wformat=2 -Wwrite-strings -Wmissing-declarations -Wredundant-decls -Wnested-externs -Wbad-function-cast -Wswitch-enum -Winit-self -Wmissing-field-initializers -Wdeclaration-after-statement -Wold-style-definition -Waddress -Wmissing-noreturn -Wnormalized=id -Woverride-init -Wstrict-overflow=1 -Wextra -Warray-bounds -Wstack-protector -Wformat -Wformat-security -Wpointer-sign
 GCCHARDENING=-D_FORTIFY_SOURCE=2 -fstack-protector-all -fwrapv -fPIE --param ssp-buffer-size=1
 LDHARDENING=-pie -z relro -z now
 
-CFLAGS=-g -O2 $(EXTRA_CFLAGS) $(GCCHARDENING) $(GCCWARNINGS)
+CFLAGS=-g -O2 $(EXTRA_CFLAGS) $(GCCHARDENING) $(GCCWARNINGS) -Werror
 LDFLAGS= $(LDHARDENING)
 
 all: $(SRCFILES)
