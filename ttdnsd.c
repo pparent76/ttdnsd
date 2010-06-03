@@ -558,11 +558,11 @@ int main(int argc, char **argv)
 		case 'c':
 			dochroot = 0;
 			break;
-		// PORT
 		// Chroot directory
 		case 'C':
 			strncpy(chroot_dir, optarg, sizeof(chroot_dir)-1);
 			break;
+		// PORT
 		case 'p':
 			bind_port = atoi(optarg);
 			if (bind_port < 1) bind_port = DEFAULT_BIND_PORT;
