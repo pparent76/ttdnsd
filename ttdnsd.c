@@ -582,7 +582,7 @@ int main(int argc, char **argv)
 		// help
 		case 'h':
 		default:
-			printf(HELP_STR);
+			printf("%s", HELP_STR);
 			exit(0);
 			break;
 		}
