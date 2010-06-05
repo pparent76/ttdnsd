@@ -624,5 +624,5 @@ int main(int argc, char **argv)
 		close(devnull);
 	}
 
-	exit(server(bind_ip, bind_port));
+    exit(server(bind_ip, bind_port));
 }
