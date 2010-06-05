@@ -43,3 +43,11 @@ install: all
 uninstall: all
 	rm $(DESTDIR)/sbin/$(EXEC)
 	rm -ri $(DESTDIR)$(CHROOT)
+
+demo: all
+	echo "Starting ttdnsd"
+	TSOCKS_CONF_FILE=tsocks.conf ttdnsd -b 127.0.0.1 -p 53 \
+    -P /var/run/ttdnsd/pid
+	echo "Attempting to lookup MX record for torproject.org through ttdnsd"
+	dig @127.0.0.1 -t mx torproject.org
+
