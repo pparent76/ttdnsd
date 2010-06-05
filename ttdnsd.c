@@ -496,6 +496,7 @@ int main(int argc, char **argv)
 	int devnull;
 	char pid_file[250] = {0};
     FILE *pf;
+    int r;
 	
 	
 	while ((opt = getopt(argc, argv, "lhdcC:b:f:p:P:")) != EOF) {
@@ -624,5 +625,8 @@ int main(int argc, char **argv)
 		close(devnull);
 	}
 
-    exit(server(bind_ip, bind_port));
+    r = server(bind_ip, bind_port);
+    if (r!=0)
+        printf("something went wrong with the server %d\n", r);
+    exit(r);
 }
