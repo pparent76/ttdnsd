@@ -245,6 +245,8 @@ int peer_select(void)
 
 int ns_select(void)
 {
+{
+// This could use a real bit of randomness, I suspect
 	return (rand()>>16) % num_nameservers;
 }
 
@@ -327,24 +329,24 @@ int server(char *bind_ip, int bind_port)
 		poll2peers[i] = -1;
 		peers[i].con = DEAD;
 	}
-	memset((char*)requests, 0, sizeof(requests));
+	memset((char*)requests, 0, sizeof(requests)); // Why not bzero?
 
-	// setup listing port
+	// setup listing port - someday we may also want to listen on TCP just for fun
 	if ((udp_fd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
 		printf("can't create UDP socket\n");
 		return(-1);
 	}
-	memset((char*)&udp, 0, sizeof(struct sockaddr_in));
+	memset((char*)&udp, 0, sizeof(struct sockaddr_in)); // bzero love
 	udp.sin_family = AF_INET;
 	udp.sin_port = htons(bind_port);
 	if (!inet_aton(bind_ip, (struct in_addr*)&udp.sin_addr)) {
 		printf("is not a valid IPv4 address: %s\n", bind_ip);
-		return(0);
+		return(0); // Why is this 0?
 	}
 	if (bind(udp_fd, (struct sockaddr*)&udp, sizeof(struct sockaddr_in)) < 0) {
 		close(udp_fd);
 		printf("can't bind to %s:%d\n", bind_ip, bind_port);
-		return(-1);
+		return(-1); // Perhaps this should be more useful?
 	}
 
 	// drop privileges
@@ -622,7 +624,5 @@ int main(int argc, char **argv)
 		close(devnull);
 	}
 
-	server(bind_ip, bind_port);
-	
-	exit(0);
+	exit(server(bind_ip, bind_port));
 }
