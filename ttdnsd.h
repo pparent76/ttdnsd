@@ -34,7 +34,7 @@
 #define DEFAULT_PID_FILE DEFAULT_CHROOT"/ttdnsd.pid"
 
 #define HELP_STR ""\
-    "syntax: ttdnsd [bpfPcdl]\n"\
+    "syntax: ttdnsd [bpfPCcdl]\n"\
     "\t-b\t<local ip>\tlocal IP to bind to\n"\
     "\t-p\t<local port>\tbind to port\n"\
     "\t-f\t<resolvers>\tfilename to read resolver IP(s) from\n"\
