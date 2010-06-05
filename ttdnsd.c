@@ -245,7 +245,6 @@ int peer_select(void)
 
 int ns_select(void)
 {
-{
 // This could use a real bit of randomness, I suspect
 	return (rand()>>16) % num_nameservers;
 }
