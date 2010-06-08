@@ -3,6 +3,7 @@ CC = /usr/bin/gcc
 CHROOT = /var/run/ttdnsd/
 CONF = ttdnsd.conf
 TORTSOCKSCONF = tor-tsocks.conf
+MANPAGE = ttdnsd.1
 TSOCKSLIB = tsocks
 OPENSSLLIB = ssl
 # If the program ever grows, we'll enjoy this macro:
@@ -39,10 +40,12 @@ install: all
 	cp $(CONF) $(DESTDIR)$(CHROOT)
 	cp $(TORTSOCKSCONF) $(DESTDIR)$(CHROOT)/tsocks.conf
 	cp $(EXEC) $(DESTDIR)/sbin/
+	cp $(MANPAGE) $(DESTDIR)/usr/share/man/man1/
 
 uninstall: all
 	rm $(DESTDIR)/sbin/$(EXEC)
 	rm -ri $(DESTDIR)$(CHROOT)
+	rm $(DESTDIR)/usr/share/man/man1/$(MANPAGE)
 
 demo: all
 	echo "Starting ttdnsd"

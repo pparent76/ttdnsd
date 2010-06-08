@@ -1,0 +1,174 @@
+.TH ttdnsd 1 "5 June 2010"
+." This could probably use some love!
+.SH NAME
+ttdnsd - The Tor TCP DNS Daemon
+.SH SYNOPSIS
+ttdnsd [-h | [-b
+.I 127.0.0.1
+-p
+.I 53
+-f
+.I /etc/ttdns.conf
+-P
+.I /var/run/ttdnsd/pid
+-C
+.I /var/run/ttdnsd/
+-c -d -l]
+.SH DESCRIPTION
+
+.B ttdnsd(1)
+is a small UDP to TCP DNS shim for use with the
+.B tor(1)
+SOCKS proxy interface. It should also work with other SOCKS proxies.
+
+.B ttdnsd(1)
+requires a single recursive DNS listener on the open
+internet to be useful. It provides no DNS caching support and may be chained
+with
+.B unbound(1)
+or another DNS caching program for performance reasons. By default
+.B ttdnsd(1)
+ships with
+.I 8.8.8.8
+as the open TCP DNS resolver.
+
+.B ttdnsd(1)
+creates a TCP connection through the configured SOCKS proxy to the randomly
+chosen DNS resolver(s) as configured in
+.I /etc/ttdns.conf
+; the connection is held open for a reasonable amount of time and subsequently
+closed when it is no longer in use. This allows users to make arbitrary DNS
+queries to will exit from the Tor network to the configured resolver(s).
+
+.SH OPTIONS
+
+.B -h
+.IP
+Print usage information for
+.B ttdnsd(1)
+.P
+
+.B -b
+.IP
+Address to bind to - usually this should be 127.0.0.1
+.P
+
+.B -p
+.IP
+Port to listen on - almost always this should be port 53
+.P
+
+.B -f
+.IP
+Configuration file for ttdnsd - pre-chroot
+.P
+
+.B -P
+.IP
+Full path to the desired location of the pid file - pre-chroot
+.P
+
+.B -C
+.IP
+Full path to alternate
+.B chroot(2)
+directory - obviously, pre-chroot
+.P
+
+.B -c
+.IP
+Do not chroot
+.B ttdnsd(1)
+when running - useful for debugging
+.P
+
+.B -d
+.IP
+Debugging mode
+.P
+
+.B -l
+.IP
+Logging mode - this logs into ttdnsd.log
+.P
+
+.SH FILES
+.B /etc/ttdns.conf
+.IP
+Must contain at least a single IP address for a TCP aware DNS resolver
+.P
+
+.B /var/run/ttdnsd/pid
+.IP
+The default pid file
+.P
+
+.B /var/run/ttdnsd/
+.IP
+The default ttdnsd chroot path
+.P
+
+.B /var/run/ttdnsd/tsocks.conf
+.IP
+contains the proper
+.B tsocks(1)
+configuration 
+.P
+
+.SH ENVIRONMENT
+.B TSOCKS_CONF_FILE
+.IP 
+.B TSOCKS_CONF_FILE 
+should point to a
+.I tsocks.conf
+configuration file within the configured
+.B chroot(2)
+.
+
+By default the
+.B tsocks
+configuration file is placed inside the chroot.
+By default this is named 
+.I tsocks.conf
+and it is configured to use the standard Tor SOCKS IP address and port
+combination. This only needs to be set if you're mucking about.
+.P
+
+.SH EXAMPLE USAGE
+Running as root will automatically switch to user 
+.I nobody
+and group 
+.I nogroup
+by running the following command:
+
+.B TSOCKS_CONF_FILE=tsocks.conf ttdnsd -b 127.0.0.1 -p 53 -P /var/run/ttdnsd/pid
+
+If you're running Gnu/Linux you may use the included init.d script: 
+
+.B /etc/init.d/ttdnsd start
+
+.SH EXIT STATUS
+
+These are currently undocumented. Obviously we're shooting for
+.I ttdnsd
+to run forever and it should exit with 
+.I 0
+when you've properly shut it down.
+
+.SH PRIVACY
+
+There may be 
+.B unintended privacy or security issues
+from DNS tampering or tracking from your configured open recursive DNS
+resolver. Consider yourself warned!
+
+.SH BUGS
+It's likely! Let us know by contacting tor-assistants@torproject.org
+
+Note that
+.B ttdnsd(1)
+is still in Alpha, and may not work as expected.
+.SH SEE ALSO
+.BR tor(1),
+.BR tsocks(1),
+.BR torify(1)
