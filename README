@@ -1,7 +1,8 @@
 ttdnsd - The Tor TCP DNS Daemon
 
 Supported platforms:
-    Debian Gnu/Linux
+    Debian Gnu/Linux 5.0
+    Ubuntu 10.4 (and probably earlier)
     Probably other Linux{es,en}
     NetBSD
     Mac OS X
