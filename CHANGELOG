@@ -1,8 +1,12 @@
 v0.4 XXX
  - added gcc hardening stuff
- - enabled warnings
+ - enabled lots of gcc warnings
  - clean up of various texts
  - ensured build no longer has any warnings at compile time
+ - now with a man page
+ - run time user selected chroot path
+ - small Makefile demo for running after build
+ - fix of compile issues on Ubuntu 10.4
 
 v0.3 Jun. 1. 2010
  - added a couple of features
