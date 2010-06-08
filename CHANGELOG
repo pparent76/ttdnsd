@@ -7,6 +7,7 @@ v0.4 XXX
  - run time user selected chroot path
  - small Makefile demo for running after build
  - fix of compile issues on Ubuntu 10.4
+ - now with a useful init.d starting script
 
 v0.3 Jun. 1. 2010
  - added a couple of features

@@ -4,6 +4,7 @@ CHROOT = /var/run/ttdnsd/
 CONF = ttdnsd.conf
 TORTSOCKSCONF = tor-tsocks.conf
 MANPAGE = ttdnsd.1
+INITSCRIPT = ttdnsd.init
 TSOCKSLIB = tsocks
 OPENSSLLIB = ssl
 # If the program ever grows, we'll enjoy this macro:
@@ -37,15 +38,18 @@ clean:
 install: all
 	strip $(EXEC)
 	test -d $(DESTDIR)$(CHROOT) || mkdir -p $(DESTDIR)$(CHROOT)
-	cp $(CONF) $(DESTDIR)$(CHROOT)
+	cp $(CONF) $(DESTDIR)/etc/$(CONF)
 	cp $(TORTSOCKSCONF) $(DESTDIR)$(CHROOT)/tsocks.conf
-	cp $(EXEC) $(DESTDIR)/sbin/
+	cp $(EXEC) $(DESTDIR)/usr/sbin/
 	cp $(MANPAGE) $(DESTDIR)/usr/share/man/man1/
+	cp $(INITSCRIPT) $(DESTDIR)/etc/init.d/ttdnsd
 
 uninstall: all
-	rm $(DESTDIR)/sbin/$(EXEC)
+	rm $(DESTDIR)/usr/sbin/$(EXEC)
+	rm $(DESTDIR)/etc/$(CONF)
 	rm -ri $(DESTDIR)$(CHROOT)
 	rm $(DESTDIR)/usr/share/man/man1/$(MANPAGE)
+	rm $(DESTDIR)/etc/init.d/ttdnsd
 
 demo: all
 	echo "Starting ttdnsd"
