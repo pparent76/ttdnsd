@@ -23,6 +23,7 @@
 #include <netdb.h>
 #include <net/if.h>
 #include <arpa/inet.h>
+#include <limits.h>
 #include "ttdnsd.h"
 
 /*
