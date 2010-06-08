@@ -70,11 +70,11 @@ struct request_t {
 };
 
 int request_find(int id);
-int peer_connect(int peer, int ns);
-int peer_connected(int peer);
-int peer_sendreq(int peer, int req);
-int peer_readres(int peer);
-void peer_handleoutstanding(int peer);
+int peer_connect(uint peer, int ns);
+int peer_connected(uint peer);
+int peer_sendreq(uint peer, int req);
+int peer_readres(uint peer);
+void peer_handleoutstanding(uint peer);
 int peer_select(void);
 int ns_select(void);
 int request_add(struct request_t *r);

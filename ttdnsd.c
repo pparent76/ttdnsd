@@ -77,7 +77,7 @@ int request_find(int id)
 	}
 }
 
-int peer_connect(int peer, int ns)
+int peer_connect(uint peer, int ns)
 {
 	struct peer_t *p = &peers[peer];
 	int r = 1;
@@ -108,7 +108,7 @@ int peer_connect(int peer, int ns)
 	return 1;
 }
 
-int peer_connected(int peer)
+int peer_connected(uint peer)
 {
 	struct peer_t *p = &peers[peer];
 	int cs;
@@ -130,13 +130,13 @@ int peer_connected(int peer)
 }
 
 /*
-int peer_keepalive(int peer)
+int peer_keepalive(uint peer)
 {
 	return 1;
 }
 */
 
-int peer_sendreq(int peer, int req)
+int peer_sendreq(uint peer, int req)
 {
 	struct peer_t *p = &peers[peer];
 	struct request_t *r = &requests[req];
@@ -156,7 +156,7 @@ int peer_sendreq(int peer, int req)
 	return 1;
 }
 
-int peer_readres(int peer)
+int peer_readres(uint peer)
 {
 	struct peer_t *p = &peers[peer];
 	struct request_t *r;
@@ -227,7 +227,7 @@ processanswer:
 	return 1;
 }
 
-void peer_handleoutstanding(int peer)
+void peer_handleoutstanding(uint peer)
 {
 	int i;
 
