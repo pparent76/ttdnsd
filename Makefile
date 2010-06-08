@@ -38,10 +38,14 @@ clean:
 install: all
 	strip $(EXEC)
 	test -d $(DESTDIR)$(CHROOT) || mkdir -p $(DESTDIR)$(CHROOT)
+	test -d $(DESTDIR)/etc/ || mkdir -p $(DESTDIR)/etc/
 	cp $(CONF) $(DESTDIR)/etc/$(CONF)
 	cp $(TORTSOCKSCONF) $(DESTDIR)$(CHROOT)/tsocks.conf
+	test -d $(DESTDIR)/usr/sbin/ || mkdir -p $(DESTDIR)/usr/sbin/
 	cp $(EXEC) $(DESTDIR)/usr/sbin/
+	test -d $(DESTDIR)/usr/share/man/man1/ || mkdir -p $(DESTDIR)/usr/share/man/man1/
 	cp $(MANPAGE) $(DESTDIR)/usr/share/man/man1/
+	test -d $(DESTDIR)/etc/init.d/ || mkdir -p $(DESTDIR)/etc/init.d/
 	cp $(INITSCRIPT) $(DESTDIR)/etc/init.d/ttdnsd
 
 uninstall: all
@@ -58,3 +62,12 @@ demo: all
 	echo "Attempting to lookup MX record for torproject.org through ttdnsd"
 	dig @127.0.0.1 -t mx torproject.org
 
+deb-src:
+	dpkg-buildpackage -S -rfakeroot -us -uc
+
+deb:
+	dpkg-buildpackage -rfakeroot -us -uc
+
+deb-clean:
+	-rm build
+	debian/rules clean
