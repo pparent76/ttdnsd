@@ -85,7 +85,7 @@ int peer_connect(uint peer, int ns)
 
     if (peer > MAX_PEERS)
     {
-        printf("peer is larger than MAX_PEERS: %i\n", peer);
+        printf("something is wrong! peer is larger than MAX_PEERS: %i\n", peer);
         return 0;
     }
 
