@@ -158,13 +158,27 @@ int peer_keepalive(uint peer)
 }
 */
 
+/* Returns 1 upon sent request; 0 upon serious error and 2 upon disconnect */
 int peer_sendreq(uint peer, int req)
 {
-	struct peer_t *p = &peers[peer];
-	struct request_t *r = &requests[req];
-	int ret;
+    struct peer_t *p;
+    struct request_t *r;
+    int ret;
 
-    // This should be bounds checks against MAX_REQUESTS and MAX_PEERS
+    if (peer > MAX_PEERS)
+    {
+        printf("Something is wrong! peer is larger than MAX_PEERS: %i\n", peer);
+        return 0;
+    }
+
+    if (req > MAX_REQUESTS)
+    {
+        printf("Something is wrong! peer is larger than MAX_PEERS: %i\n", peer);
+        return 0;
+    }
+
+    p = &peers[peer];
+    r = &requests[req];
 
 	while ((ret = write(p->tcp_fd, r->b, (r->bl + 2))) < 0 && errno == EAGAIN);
 	
