@@ -55,13 +55,13 @@ uninstall: all
 	rm $(DESTDIR)/usr/share/man/man1/$(MANPAGE)
 	rm $(DESTDIR)/etc/init.d/ttdnsd
 
-demo: all
+demo: install
 	echo "Killing ttdnsd"
 	-killall -9 ttdnsd
 	echo "Starting ttdnsd"
 	echo "Starting ttdnsd"
 	TSOCKS_CONF_FILE=tsocks.conf ttdnsd -b 127.0.0.1 -p 53 \
-    -P /var/run/ttdnsd/pid
+    -P /var/run/ttdnsd/pid -l
 	echo "Attempting to lookup MX record for torproject.org through ttdnsd"
 	dig @127.0.0.1 -t mx torproject.org
 
