@@ -465,7 +465,7 @@ int load_nameservers(char *filename)
 	}
 	
 	if (!fp) return 0;
-	while (fgets(line, MAX_LINE_SIZE, fp)) {
+	while (fgets(line, MAX_LINE_SIZE, fp)) { // properly terminate line
 		if (line[0] == '#' || line[0] == '\n' || line[0] == ' ') continue;
 		line[strlen(line)-1] = 0;
 		if (strstr(line, "192.168.") == line) continue;
@@ -502,7 +502,7 @@ int main(int argc, char **argv)
 	int log = 0;
 	int bind_port = DEFAULT_BIND_PORT;
 	int devnull;
-	char pid_file[250] = {0};
+	char pid_file[PATH_MAX] = {0};
     FILE *pf;
     int r;
 	
