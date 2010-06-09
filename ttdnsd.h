@@ -21,6 +21,8 @@
 // request queue size (use a prime number for hashing)
 #define MAX_REQUESTS 499
 // 199, 1009
+// max line size for configuration processing
+#define MAX_LINE_SIZE 1025
 
 #define NOBODY 65534
 #define NOGROUP 65534

@@ -450,7 +450,7 @@ int server(char *bind_ip, int bind_port)
 int load_nameservers(char *filename)
 {
 	FILE *fp;
-	char line[1025] = {0};
+    char line[MAX_LINE_SIZE] = {0};
 	unsigned long int ns;
 
 
@@ -465,7 +465,7 @@ int load_nameservers(char *filename)
 	}
 	
 	if (!fp) return 0;
-	while (fgets(line, 1025, fp)) {
+	while (fgets(line, MAX_LINE_SIZE, fp)) {
 		if (line[0] == '#' || line[0] == '\n' || line[0] == ' ') continue;
 		line[strlen(line)-1] = 0;
 		if (strstr(line, "192.168.") == line) continue;
@@ -558,7 +558,7 @@ int main(int argc, char **argv)
 		exit(1);
 	}
 
-	if (!load_nameservers(resolvers)) {
+	if (!load_nameservers(resolvers)) { // perhaps we want to move this entirely into the chroot?
 		printf("can't open resolvers file %s, will try again after chroot\n", resolvers);
 	}
 
