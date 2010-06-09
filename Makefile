@@ -56,6 +56,9 @@ uninstall: all
 	rm $(DESTDIR)/etc/init.d/ttdnsd
 
 demo: all
+	echo "Killing ttdnsd"
+	-killall -9 ttdnsd
+	echo "Starting ttdnsd"
 	echo "Starting ttdnsd"
 	TSOCKS_CONF_FILE=tsocks.conf ttdnsd -b 127.0.0.1 -p 53 \
     -P /var/run/ttdnsd/pid
