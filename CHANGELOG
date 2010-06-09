@@ -8,6 +8,9 @@ v0.4 XXX
  - small Makefile demo for running after build
  - fix of compile issues on Ubuntu 10.4
  - now with a useful init.d starting script
+ - debian build targets in the Makefile
+    - make deb || make deb-src
+ - major refactoring of every function
 
 v0.3 Jun. 1. 2010
  - added a couple of features

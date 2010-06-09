@@ -24,7 +24,8 @@ PIDFILE=/var/run/ttdnsd/pid
 DAEMON_ARGS="-b 127.0.0.1 -p 53 -P $PIDFILE -f /etc/ttdnsd.conf"
 SCRIPTNAME=/etc/init.d/$NAME
 DEFAULTSFILE=/etc/default/$NAME
-export TSOCKS_CONF_FILE=tsocks.conf
+TSOCKS_CONF_FILE=tsocks.conf
+export TSOCKS_CONF_FILE
 
 # Exit if the package is not installed
 [ -x "$DAEMON" ] || exit 0
