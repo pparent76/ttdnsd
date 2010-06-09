@@ -41,7 +41,8 @@ struct peer_t
 	time_t timeout;
 	CON_STATE con; /**< connection state 0=dead, 1=connecting..., 3=connected */
 	unsigned char b[1502]; /**< receive buffer */
-	int bl; /**< bytes in receive buffer */
+	int bl; /**< bytes in receive buffer */ // bl? Why don't we call this bytes_in_recv_buf or something meaningful?
+
 };
 
 static unsigned long int *nameservers; /**< nameservers pool */
@@ -77,43 +78,49 @@ int request_find(int id)
 	}
 }
 
+
+/* Returns 1 upon non-blocking connection setup; 0 upon serious error */
 int peer_connect(uint peer, int ns)
 {
     struct peer_t *p;
-    int r = 1;
+    int socket_opt_val = 1;
     int cs;
 
-    if (peer > MAX_PEERS)
+    if (peer > MAX_PEERS) // Perhaps we should just assert() and die entirely?
     {
-        printf("something is wrong! peer is larger than MAX_PEERS: %i\n", peer);
+        printf("Something is wrong! peer is larger than MAX_PEERS: %i\n", peer);
         return 0;
     }
 
     p = &peers[peer];
 
-	if ((p->tcp_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-		printf("can't create TCP socket\n");
-		return 0;
-	}
-	
-	if (setsockopt(p->tcp_fd, SOL_SOCKET, SO_REUSEADDR, &r, sizeof(int))) printf("Setting SO_REUSEADDR failed\n");
-	if (fcntl(p->tcp_fd, F_SETFL, O_NONBLOCK)) printf("Setting O_NONBLOCK failed\n");
-	
-	p->tcp.sin_family = AF_INET;
-	p->tcp.sin_port = htons(53);
-	
-	p->tcp.sin_addr.s_addr = nameservers[ns];
+    if ((p->tcp_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+        printf("Can't create TCP socket\n");
+        return 0;
+    }
 
-	printf("connecting to: %s\n", inet_ntoa(p->tcp.sin_addr));
-	cs = connect(p->tcp_fd, (struct sockaddr*)&p->tcp, sizeof(struct sockaddr_in));
+    if (setsockopt(p->tcp_fd, SOL_SOCKET, SO_REUSEADDR, &socket_opt_val, sizeof(int)))
+        printf("Setting SO_REUSEADDR failed\n");
 
-	// we are in nonblock mode
-	if (cs != 0) perror("connect status:");
+    if (fcntl(p->tcp_fd, F_SETFL, O_NONBLOCK))
+        printf("Setting O_NONBLOCK failed\n");
 
-	p->bl = 0;
-	p->con = CONNECTING;
-	
-	return 1;
+    p->tcp.sin_family = AF_INET;
+
+    // This should not be hardcoded to a magic number; per ns port data structure changes required
+    p->tcp.sin_port = htons(53);
+
+    p->tcp.sin_addr.s_addr = nameservers[ns];
+
+    printf("connecting to %s on port %i\n", inet_ntoa(p->tcp.sin_addr), ntohs(p->tcp.sin_port));
+    cs = connect(p->tcp_fd, (struct sockaddr*)&p->tcp, sizeof(struct sockaddr_in));
+    if (cs != 0) perror("connect status:");
+
+    // We should be in non-blocking mode now
+    p->bl = 0;
+    p->con = CONNECTING;
+
+    return 1;
 }
 
 int peer_connected(uint peer)
