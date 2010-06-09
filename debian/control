@@ -6,7 +6,7 @@ Standards-Version: 3.8.4.0
 
 Package: ttdnsd
 Architecture: any
-Depends: ${shlibs:Depends}, openssl-dev, tor
+Depends: ${shlibs:Depends}, tor
 Description: The Tor TCP DNS Daemon
  ttdnsd(1) is a small UDP to TCP DNS shim for use with the tor(1) SOCKS proxy
  interface. It should also work with other SOCKS proxies.
