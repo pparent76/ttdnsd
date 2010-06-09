@@ -79,10 +79,18 @@ int request_find(int id)
 
 int peer_connect(uint peer, int ns)
 {
-	struct peer_t *p = &peers[peer];
-	int r = 1;
-	int cs;
-		
+    struct peer_t *p;
+    int r = 1;
+    int cs;
+
+    if (peer > MAX_PEERS)
+    {
+        printf("peer is larger than MAX_PEERS: %i\n", peer);
+        return 0;
+    }
+
+    p = &peers[peer];
+
 	if ((p->tcp_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
 		printf("can't create TCP socket\n");
 		return 0;
