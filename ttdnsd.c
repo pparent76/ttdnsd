@@ -164,6 +164,7 @@ int peer_sendreq(uint peer, int req)
 	struct request_t *r = &requests[req];
 	int ret;
 
+    // This should be bounds checks against MAX_REQUESTS and MAX_PEERS
 
 	while ((ret = write(p->tcp_fd, r->b, (r->bl + 2))) < 0 && errno == EAGAIN);
 	
