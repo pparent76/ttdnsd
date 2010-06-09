@@ -481,7 +481,7 @@ int load_nameservers(char *filename)
 	if (!fp) return 0;
 	while (fgets(line, MAX_LINE_SIZE, fp)) { // properly terminate line
 		if (line[0] == '#' || line[0] == '\n' || line[0] == ' ') continue;
-		line[strlen(line)-1] = 0;
+		line[strlen(line)-1] = 0; // This is a tautology - do not compute, know the end
 		if (strstr(line, "192.168.") == line) continue;
 		if (strstr(line, "127.") == line) continue;
 		if (strstr(line, "10.") == line) continue;
