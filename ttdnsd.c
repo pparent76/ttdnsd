@@ -45,7 +45,7 @@ struct peer_t
 };
 
 static unsigned long int *nameservers; /**< nameservers pool */
-static int num_nameservers; /**< number of nameservers */
+static unsigned int num_nameservers; /**< number of nameservers */
 
 static struct peer_t peers[MAX_PEERS]; /**< TCP peers */
 static struct request_t requests[MAX_REQUESTS]; /**< request queue */
@@ -442,7 +442,7 @@ int server(char *bind_ip, int bind_port)
 			
 			printf("received request of %d bytes, id = %d\n", tmp.bl, tmp.id);
 			
-			request_add(&tmp);
+			request_add(&tmp); // This should be checked, we're currently ignoring imporant returns
 		}
 	}
 }
