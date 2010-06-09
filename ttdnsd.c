@@ -123,25 +123,32 @@ int peer_connect(uint peer, int ns)
     return 1;
 }
 
+/* Returns 1 upon non-blocking connection; 0 upon serious error */
 int peer_connected(uint peer)
 {
-	struct peer_t *p = &peers[peer];
-	int cs;
-	
-	
-	cs = connect(p->tcp_fd, (struct sockaddr*)&p->tcp, sizeof(struct sockaddr_in));
-	
-	if (cs == 0) {
-		p->con = CONNECTED;
-		return 1;
-	}
-	else {
-		printf("connection failed\n");
-		close(p->tcp_fd);
-		p->tcp_fd = -1;
-		p->con = DEAD;
-		return 0;
-	}
+    struct peer_t *p;
+    int cs;
+
+    if (peer > MAX_PEERS)
+    {
+        printf("Something is wrong! peer is larger than MAX_PEERS: %i\n", peer);
+        return 0;
+    }
+
+    p = &peers[peer];
+
+    cs = connect(p->tcp_fd, (struct sockaddr*)&p->tcp, sizeof(struct sockaddr_in));
+
+    if (cs == 0) {
+        p->con = CONNECTED;
+        return 1;
+    } else {
+        printf("connection failed\n");
+        close(p->tcp_fd);
+        p->tcp_fd = -1;
+        p->con = DEAD;
+        return 0;
+    }
 }
 
 /*
