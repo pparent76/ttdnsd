@@ -266,14 +266,19 @@ processanswer:
 
 void peer_handleoutstanding(uint peer)
 {
-	int i;
+    int i;
 
-	for (i = 0; i < MAX_REQUESTS; i++) {
-		if (requests[i].id != 0 && requests[i].active == WAITING) {
-			requests[i].active = SENT;
-			peer_sendreq(peer, i);
-		}
-	}
+    if (peer > MAX_PEERS)
+    {
+        printf("Something is wrong! peer is larger than MAX_PEERS: %i\n", peer);
+    }
+
+    for (i = 0; i < MAX_REQUESTS; i++) {
+        if (requests[i].id != 0 && requests[i].active == WAITING) {
+            requests[i].active = SENT;
+            peer_sendreq(peer, i);
+        }
+    }
 }
 
 int peer_select(void)
