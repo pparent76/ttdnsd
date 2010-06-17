@@ -47,24 +47,25 @@ static int multipeer = 0;
 static int multireq = 0;
 */
 
+/* Return a positive positional number or -1 for unfound entries. */
 int request_find(int id)
 {
-	int pos = id % MAX_REQUESTS;
-	
-	for (;;) {
-		if (requests[pos].id == id) {
-			printf("found id=%d at pos=%d\n", id, pos);
-			return pos;
-		}
-		else {
-			pos++;
-			pos %= MAX_REQUESTS;
-			if (pos == (id % MAX_REQUESTS)) {
-				printf("can't find id=%d\n", id);
-				return -1;
-			}
-		}
-	}
+    int pos = id % MAX_REQUESTS;
+
+    for (;;) {
+        if (requests[pos].id == id) {
+            printf("found id=%d at pos=%d\n", id, pos);
+            return pos;
+        }
+        else {
+            pos++;
+            pos %= MAX_REQUESTS;
+            if (pos == (id % MAX_REQUESTS)) {
+                printf("can't find id=%d\n", id);
+                return -1;
+            }
+        }
+    }
 }
 
 
