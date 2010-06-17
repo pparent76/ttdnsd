@@ -265,10 +265,10 @@ processanswer:
 }
 
 /* Handles outstanding peer requests and does not return anything. */
-/* XXX: Perhaps this should care about peer_sendreq's return value? */
 void peer_handleoutstanding(uint peer)
 {
     int i;
+    int ret;
 
     if (peer > MAX_PEERS)
     {
@@ -278,7 +278,8 @@ void peer_handleoutstanding(uint peer)
     for (i = 0; i < MAX_REQUESTS; i++) {
         if (requests[i].id != 0 && requests[i].active == WAITING) {
             requests[i].active = SENT;
-            peer_sendreq(peer, i);
+            ret = peer_sendreq(peer, i);
+            printf("peer_sendreq returned %d\n", ret);
         }
     }
 }
