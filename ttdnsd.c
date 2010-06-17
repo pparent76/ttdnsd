@@ -170,17 +170,17 @@ int peer_sendreq(uint peer, int req)
     p = &peers[peer];
     r = &requests[req];
 
-	while ((ret = write(p->tcp_fd, r->b, (r->bl + 2))) < 0 && errno == EAGAIN);
-	
-	if (ret == 0) {
-		close(p->tcp_fd);
-		p->tcp_fd = -1;
-		p->con = DEAD;
-		printf("peer %d got disconnected\n", peer);
-		return 2;
-	}
-	
-	return 1;
+    while ((ret = write(p->tcp_fd, r->b, (r->bl + 2))) < 0 && errno == EAGAIN);
+
+    if (ret == 0) {
+        close(p->tcp_fd);
+        p->tcp_fd = -1;
+        p->con = DEAD;
+        printf("peer %d got disconnected\n", peer);
+        return 2;
+    }
+
+    return 1;
 }
 
 int peer_readres(uint peer)
