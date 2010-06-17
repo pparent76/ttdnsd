@@ -186,30 +186,37 @@ int peer_sendreq(uint peer, int req)
 
 int peer_readres(uint peer)
 {
-	struct peer_t *p = &peers[peer];
-	struct request_t *r;
-	int ret;
-	unsigned short int *ul;
-	int id;
-	int req;
-	unsigned short int *l = (unsigned short int*)p->b;
-	int len;
-	
-	
-	while ((ret = read(p->tcp_fd, (p->b + p->bl), (1502 - p->bl))) < 0 && errno == EAGAIN);
+    struct peer_t *p;
+    struct request_t *r;
+    int ret;
+    unsigned short int *ul;
+    int id;
+    int req;
+    unsigned short int *l;
+    int len;
 
-	if (ret == 0) {
-		close(p->tcp_fd);
-		p->tcp_fd = -1;
-		
-		printf("peer %d got disconnected\n", peer);
-		p->con = DEAD;
-		return 3;
-	}
-	
-	p->bl += ret;
+    if (peer > MAX_PEERS)
+    {
+        printf("Something is wrong! peer is larger than MAX_PEERS: %i\n", peer);
+        return 0;
+    }
 
-	// get answer from receive buffer
+    p = &peers[peer];
+    l = (unsigned short int*)p->b;
+
+    while ((ret = read(p->tcp_fd, (p->b + p->bl), (1502 - p->bl))) < 0 && errno == EAGAIN);
+
+    if (ret == 0) {
+        close(p->tcp_fd);
+        p->tcp_fd = -1;
+        printf("peer %d got disconnected\n", peer);
+        p->con = DEAD;
+        return 3;
+    }
+
+    p->bl += ret;
+
+    // get answer from receive buffer
 processanswer:
 
 	if (p->bl < 2) {
