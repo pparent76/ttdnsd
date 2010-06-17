@@ -265,6 +265,7 @@ processanswer:
 }
 
 /* Handles outstanding peer requests and does not return anything. */
+/* XXX: Perhaps this should care about peer_sendreq's return value? */
 void peer_handleoutstanding(uint peer)
 {
     int i;
