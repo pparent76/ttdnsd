@@ -180,6 +180,7 @@ int peer_sendreq(uint peer, int req)
         return 2;
     }
 
+    printf("peer_sendreq write attempt returned: %d\n", ret);
     return 1;
 }
 
