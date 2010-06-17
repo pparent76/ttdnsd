@@ -184,6 +184,7 @@ int peer_sendreq(uint peer, int req)
     return 1;
 }
 
+/* Returns -1 on error, returns 1 on something, returns 2 on something, returns 3 on disconnect. */
 int peer_readres(uint peer)
 {
     struct peer_t *p;
@@ -198,7 +199,7 @@ int peer_readres(uint peer)
     if (peer > MAX_PEERS)
     {
         printf("Something is wrong! peer is larger than MAX_PEERS: %i\n", peer);
-        return 0;
+        return -1;
     }
 
     p = &peers[peer];
