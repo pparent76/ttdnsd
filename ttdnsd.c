@@ -264,6 +264,7 @@ processanswer:
     return 1;
 }
 
+/* Handles outstanding peer requests and does not return anything. */
 void peer_handleoutstanding(uint peer)
 {
     int i;
