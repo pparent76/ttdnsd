@@ -71,6 +71,17 @@ struct request_t {
     time_t timeout; /**< timeout of request */
 };
 
+struct peer_t
+{
+    struct sockaddr_in tcp;
+    int tcp_fd;
+    time_t timeout;
+    CON_STATE con; /**< connection state 0=dead, 1=connecting..., 3=connected */
+    unsigned char b[1502]; /**< receive buffer */
+    int bl; /**< bytes in receive buffer */ // bl? Why don't we call this bytes_in_recv_buf or something meaningful?
+};
+
+
 int request_find(int id);
 int peer_connect(uint peer, int ns);
 int peer_connected(uint peer);
