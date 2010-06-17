@@ -219,47 +219,47 @@ int peer_readres(uint peer)
     // get answer from receive buffer
 processanswer:
 
-	if (p->bl < 2) {
-		return 2;
-	}
-	else {
-		len = ntohs(*l);
-		
-		//printf("r l=%d r=%d\n", len, p->bl-2);
-		
-		if ((len + 2) > p->bl)
-			return 2;
-	}
-		
-	printf("received answer %d bytes\n", p->bl);
-	
-	ul = (unsigned short int*)(p->b + 2);
-	id = ntohs(*ul);
-	
-	if ((req = request_find(id)) == -1) {
-		memmove(p->b, (p->b + len + 2), (p->bl - len - 2));
-		p->bl -= len + 2;	
-		return 0;
-	}
-	r = &requests[req];
-	
-	// write back real id
-	*ul = htons(r->rid);
-	
-	r->a.sin_family = AF_INET;
-	while (sendto(udp_fd, (p->b + 2), len, 0, (struct sockaddr*)&r->a, sizeof(struct sockaddr_in)) < 0 && errno == EAGAIN);
-	
-	printf("forwarding answer (%d bytes)\n", len);
+    if (p->bl < 2) {
+        return 2;
+    }
+    else {
+        len = ntohs(*l);
 
-	memmove(p->b, p->b + len +2, p->bl - len - 2);
-	p->bl -= len + 2;	
+        printf("r l=%d r=%d\n", len, p->bl-2);
 
-	// mark as handled/unused
-	r->id = 0;
+        if ((len + 2) > p->bl)
+            return 2;
+    }
 
-	if (p->bl > 0) goto processanswer;
+    printf("received answer %d bytes\n", p->bl);
 
-	return 1;
+    ul = (unsigned short int*)(p->b + 2);
+    id = ntohs(*ul);
+
+    if ((req = request_find(id)) == -1) {
+        memmove(p->b, (p->b + len + 2), (p->bl - len - 2));
+        p->bl -= len + 2;
+        return 0;
+    }
+    r = &requests[req];
+
+    // write back real id
+    *ul = htons(r->rid);
+
+    r->a.sin_family = AF_INET;
+    while (sendto(udp_fd, (p->b + 2), len, 0, (struct sockaddr*)&r->a, sizeof(struct sockaddr_in)) < 0 && errno == EAGAIN);
+
+    printf("forwarding answer (%d bytes)\n", len);
+
+    memmove(p->b, p->b + len +2, p->bl - len - 2);
+    p->bl -= len + 2;
+
+    // mark as handled/unused
+    r->id = 0;
+
+    if (p->bl > 0) goto processanswer;
+
+    return 1;
 }
 
 void peer_handleoutstanding(uint peer)
