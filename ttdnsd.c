@@ -185,6 +185,7 @@ int peer_sendreq(uint peer, int req)
 }
 
 /* Returns -1 on error, returns 1 on something, returns 2 on something, returns 3 on disconnect. */
+/* XXX This function needs a really serious re-write/audit/etc. */
 int peer_readres(uint peer)
 {
     struct peer_t *p;
