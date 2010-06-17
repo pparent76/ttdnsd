@@ -297,68 +297,72 @@ int ns_select(void)
     return (rand()>>16) % num_nameservers;
 }
 
+/* Return 0 for a request that is pending or if all slots are full, otherwise
+   return the value of peer_sendreq or peer_connect respectively... */
 int request_add(struct request_t *r)
 {
-	int pos = r->id % MAX_REQUESTS;
-	int dst_peer;
-	unsigned short int *ul;
-	time_t ct = time(NULL);
+    int pos = r->id % MAX_REQUESTS; // XXX r->id is unchecked
+    int dst_peer;
+    unsigned short int *ul;
+    time_t ct = time(NULL);
 
-	printf("adding new request (id=%d)\n", r->id);
-	for (;;) {
-		if (requests[pos].id == 0) {
-			// this one is unused, take it
-			break;
-		}
-		else {
-			if (requests[pos].id == r->id) {
-				if (memcmp((char*)&r->a, (char*)&requests[pos].a, sizeof(r->a)) == 0) {
-					printf("hash position %d already taken by request with same id; dropping it\n", pos);
-					return 0;
-				}
-				else {
-					do {
-						r->id = ((rand()>>16) % 0xffff);
-					} while (r->id < 1);
-					pos = r->id % MAX_REQUESTS;
-					printf("NATing id (id was %d now is %d)\n", r->rid, r->id);
-					continue;
-				}
-			}
-			else if ((requests[pos].timeout + MAX_TIME) > ct) {
-				// request timed out, take it
-				break;
-			}
-			else {
-				pos++;
-				pos %= MAX_REQUESTS;
-				if (pos == (r->id % MAX_REQUESTS)) {
-					printf("no more free request slots, wow this is a busy node. dropping request!\n");
-					return 0;
-				}
-			}
-		}
-	}
+    printf("adding new request (id=%d)\n", r->id);
+    for (;;) {
+        if (requests[pos].id == 0) {
+            // this one is unused, take it
+            printf("new request added at pos: %d\n", requests[pos].id);
+            break;
+        }
+        else {
+            if (requests[pos].id == r->id) {
+                if (memcmp((char*)&r->a, (char*)&requests[pos].a, sizeof(r->a)) == 0) {
+                    printf("hash position %d already taken by request with same id; dropping it\n", pos);
+                    return 0;
+                }
+                else {
+                    do {
+                        r->id = ((rand()>>16) % 0xffff);
+                    } while (r->id < 1);
+                    pos = r->id % MAX_REQUESTS;
+                    printf("NATing id (id was %d now is %d)\n", r->rid, r->id);
+                    continue;
+                }
+            }
+            else if ((requests[pos].timeout + MAX_TIME) > ct) {
+                // request timed out, take it
+                printf("taking pos from timed out request\n");
+                break;
+            }
+            else {
+                pos++;
+                pos %= MAX_REQUESTS;
+                if (pos == (r->id % MAX_REQUESTS)) {
+                    printf("no more free request slots, wow this is a busy node. dropping request!\n");
+                    return 0;
+                }
+            }
+        }
+    }
 
-	r->timeout = time(NULL);
-	
-	// update id
-	ul = (unsigned short int*)(r->b + 2);
-	*ul = htons(r->id);
-	
-	printf("using request slot %d\n", pos);
-	memcpy((char*)&requests[pos], (char*)r, sizeof(struct request_t));
+    r->timeout = time(NULL);
 
-	// nice feature to have: send request to multiple peers for speedup and reliability
-	
-	dst_peer = peer_select();
-	if (peers[dst_peer].con == CONNECTED) {
-		r->active = SENT;
-		return peer_sendreq(dst_peer, pos);
-	}
-	else {
-		return peer_connect(dst_peer, ns_select());
-	}
+    // update id
+    ul = (unsigned short int*)(r->b + 2);
+    *ul = htons(r->id);
+
+    printf("using request slot %d\n", pos);
+    memcpy((char*)&requests[pos], (char*)r, sizeof(struct request_t));
+
+    // XXX: nice feature to have: send request to multiple peers for speedup and reliability
+
+    dst_peer = peer_select();
+    if (peers[dst_peer].con == CONNECTED) {
+        r->active = SENT;
+        return peer_sendreq(dst_peer, pos);
+    }
+    else {
+        return peer_connect(dst_peer, ns_select());
+    }
 }
 
 int server(char *bind_ip, int bind_port)
