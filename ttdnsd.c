@@ -283,9 +283,10 @@ void peer_handleoutstanding(uint peer)
     }
 }
 
+/* Currently, we only return the 0th peer. Someday we might want more? */
 int peer_select(void)
 {
-	return 0;
+    return 0;
 }
 
 int ns_select(void)
