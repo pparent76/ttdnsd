@@ -289,10 +289,11 @@ int peer_select(void)
     return 0;
 }
 
+/* Selects a random nameserver from the pool and returns the number. */
 int ns_select(void)
 {
-// This could use a real bit of randomness, I suspect
-	return (rand()>>16) % num_nameservers;
+    // This could use a real bit of randomness, I suspect
+    return (rand()>>16) % num_nameservers;
 }
 
 int request_add(struct request_t *r)
