@@ -97,6 +97,27 @@ int peer_connect(uint peer, int ns)
     int socket_opt_val = 1;
     int cs;
 
+    /* REFACTOR You know, we should pass around pointers to `struct
+       peer_t` objects and nameserver addresses and `struct
+       request_t`s, instead of integers indexing into arrays. This
+       would have the following benefits:
+
+       - we could greatly reduce the amount of pointer arithmetic
+         (e.g. &peers[peer]), and instead of bounds-checking the
+         offsets at the entry to every function (inconsistently;
+         you’ll notice that here he forgot to bounds-check ns) we
+         could just bounds-check them in the very few places where we
+         generate the pointers;
+
+       - the compiler will be able to warn us if we accidentally pass
+         a nameserver index where we meant to pass a request index;
+
+       - knowledge of the peers, requests, and nameservers arrays
+         could be confined to a small part of the program, making the
+         program easier to understand and review.
+
+    */
+
     if (peer > MAX_PEERS) // Perhaps we should just assert() and die entirely?
     {
         printf("Something is wrong! peer is larger than MAX_PEERS: %i\n", peer);
