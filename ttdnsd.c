@@ -270,7 +270,7 @@ int peer_readres(uint peer)
         smaller than the DNS response. But it could happen.  And then
         we fall into the `processanswer` code below without having the
         whole answer. */
-    while ((ret = recv(p->tcp_fd, (p->b + p->bl), (RECV_BUF_SIZE - p->bl), MSG_DONTWAIT)) < 0 && errno == EAGAIN);
+    while ((ret = read(p->tcp_fd, (p->b + p->bl), (RECV_BUF_SIZE - p->bl))) < 0 && errno == EAGAIN);
 
     if (ret == 0) {
         close(p->tcp_fd);
