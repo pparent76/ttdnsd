@@ -185,6 +185,7 @@ int peer_connected(uint peer)
         return 1;
     } else {
         printf("connection failed\n");
+        printf("Is Tor running?\n");
         close(p->tcp_fd);
         p->tcp_fd = -1;
         p->con = DEAD;

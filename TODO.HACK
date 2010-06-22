@@ -3,5 +3,4 @@ Finish audit of ttdnsd.c
 Ask helix to package for deb.torproject.org.
 autoconf the entire build process for better portability
 Improve logging with syslog() perhaps?
-ttdnsd should attempt to talk to the SOCKS proxy and barf
 handle AAAA records (eg noreply.org, google.com - etc)
