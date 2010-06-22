@@ -48,9 +48,9 @@ static int multireq = 0;
 */
 
 /* Return a positive positional number or -1 for unfound entries. */
-int request_find(int id)
+int request_find(uint id)
 {
-    int pos = id % MAX_REQUESTS;
+    uint pos = id % MAX_REQUESTS;
 
     for (;;) {
         if (requests[pos].id == id) {
@@ -301,7 +301,7 @@ int ns_select(void)
    return the value of peer_sendreq or peer_connect respectively... */
 int request_add(struct request_t *r)
 {
-    int pos = r->id % MAX_REQUESTS; // XXX r->id is unchecked
+    uint pos = r->id % MAX_REQUESTS; // XXX r->id is unchecked
     int dst_peer;
     unsigned short int *ul;
     time_t ct = time(NULL);

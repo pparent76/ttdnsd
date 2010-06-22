@@ -65,7 +65,7 @@ struct request_t {
     socklen_t al;
     unsigned char b[1502]; /**< request buffer */
     int bl; /**< bytes in request buffer */
-    int id; /**< dns request id */
+    uint id; /**< dns request id */
     int rid; /**< real dns request id */
     REQ_STATE active; /**< 1=sent, 0=waiting for tcp to become connected */
     time_t timeout; /**< timeout of request */
@@ -82,7 +82,7 @@ struct peer_t
 };
 
 
-int request_find(int id);
+int request_find(uint id);
 int peer_connect(uint peer, int ns);
 int peer_connected(uint peer);
 int peer_sendreq(uint peer, int req);
