@@ -105,12 +105,10 @@ int peer_connect(uint peer, int ns)
 
     p = &peers[peer];
 
-    /* BUG There should be a check to see if we’re already in a
-        CONNECTING or CONNECTING2 state at this point; otherwise we
-        leak a file descriptor in the next statement, and frequent
-        enough calls to this function (i.e. frequent enough DNS
-        requests) will also prevent the connection from ever being
-        made! */
+    if (p->con == CONNECTING || p->con == CONNECTING2) {
+        printf("It appears that peer %d is already CONNECTING\n", peer);
+        return 1;
+    }
 
 
     if ((p->tcp_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
