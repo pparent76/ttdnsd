@@ -262,8 +262,6 @@ int peer_readres(uint peer)
     p = &peers[peer];
     l = (unsigned short int*)p->b;
 
-     /* QUASIBUG: If you want this to work on Windows, you need to
-        `recv`, not `read` */
      /* BUG: we’re reading on a TCP socket here, so we could in theory
         get a partial response. Using TCP puts the onus on the user
         program (i.e. this code) to buffer bytes until we have a
@@ -272,7 +270,7 @@ int peer_readres(uint peer)
         smaller than the DNS response. But it could happen.  And then
         we fall into the `processanswer` code below without having the
         whole answer. */
-    while ((ret = read(p->tcp_fd, (p->b + p->bl), (RECV_BUF_SIZE - p->bl))) < 0 && errno == EAGAIN);
+    while ((ret = recv(p->tcp_fd, (p->b + p->bl), (RECV_BUF_SIZE - p->bl), MSG_DONTWAIT)) < 0 && errno == EAGAIN);
 
     if (ret == 0) {
         close(p->tcp_fd);
