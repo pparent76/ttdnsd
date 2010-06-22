@@ -6,11 +6,19 @@ v0.4 XXX
  - now with a man page
  - run time user selected chroot path
  - small Makefile demo for running after build
+    - make demo
  - fix of compile issues on Ubuntu 10.4
  - now with a useful init.d starting script
  - debian build targets in the Makefile
     - make deb || make deb-src
+ - added DNS tests to Makefile
+    - make demo-tests
  - major refactoring of every function
+    - lots of bounds checking!
+    - prefer to use unsigned ints over ints whenever possible
+    - lots of other stuff
+ - code review by Jacob Appelbaum
+ - code review by Kragen Javier Sitaker
 
 v0.3 Jun. 1. 2010
  - added a couple of features
