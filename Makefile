@@ -74,3 +74,12 @@ deb:
 deb-clean:
 	-rm build
 	debian/rules clean
+
+# These all work; you've broken something if these fail
+demo-tests: demo
+	dig @127.0.0.1 -x 38.229.70.10
+	dig @127.0.0.1 -t A torproject.org
+	dig @127.0.0.1 -t SOA torproject.org
+	dig @127.0.0.1 -t NS torproject.org
+	dig @127.0.0.1 -t MX torproject.org
+	dig @127.0.0.1 -t CNAME svn.freehaven.net
