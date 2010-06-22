@@ -24,6 +24,9 @@
 // max line size for configuration processing
 #define MAX_LINE_SIZE 1025
 
+// Magic numbers
+#define RECV_BUF_SIZE 1502
+
 #define NOBODY 65534
 #define NOGROUP 65534
 #define DEFAULT_BIND_PORT 53
