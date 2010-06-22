@@ -367,30 +367,31 @@ int request_add(struct request_t *r)
 
 int server(char *bind_ip, int bind_port)
 {
-	struct sockaddr_in udp;
-	struct pollfd pfd[MAX_PEERS+1];
-	int poll2peers[MAX_PEERS];
-	int fr;
-	int i;
-	int pfd_num;
-	struct request_t tmp;
-	
-	for (i = 0; i < MAX_PEERS; i++) {
-		peers[i].tcp_fd = -1;
-		poll2peers[i] = -1;
-		peers[i].con = DEAD;
-	}
-	memset((char*)requests, 0, sizeof(requests)); // Why not bzero?
+    struct sockaddr_in udp;
+    struct pollfd pfd[MAX_PEERS+1];
+    int poll2peers[MAX_PEERS];
+    int fr;
+    int i;
+    int pfd_num;
+    struct request_t tmp;
+    int r;
 
-	// setup listing port - someday we may also want to listen on TCP just for fun
-	if ((udp_fd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
-		printf("can't create UDP socket\n");
-		return(-1);
-	}
-	memset((char*)&udp, 0, sizeof(struct sockaddr_in)); // bzero love
-	udp.sin_family = AF_INET;
-	udp.sin_port = htons(bind_port);
-	if (!inet_aton(bind_ip, (struct in_addr*)&udp.sin_addr)) {
+    for (i = 0; i < MAX_PEERS; i++) {
+        peers[i].tcp_fd = -1;
+        poll2peers[i] = -1;
+        peers[i].con = DEAD;
+    }
+    memset((char*)requests, 0, sizeof(requests)); // Why not bzero?
+
+    // setup listing port - someday we may also want to listen on TCP just for fun
+    if ((udp_fd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
+    	printf("can't create UDP socket\n");
+    	return(-1);
+    }
+    memset((char*)&udp, 0, sizeof(struct sockaddr_in)); // bzero love
+    udp.sin_family = AF_INET;
+    udp.sin_port = htons(bind_port);
+    if (!inet_aton(bind_ip, (struct in_addr*)&udp.sin_addr)) {
 		printf("is not a valid IPv4 address: %s\n", bind_ip);
 		return(0); // Why is this 0?
 	}
@@ -400,12 +401,20 @@ int server(char *bind_ip, int bind_port)
 		return(-1); // Perhaps this should be more useful?
 	}
 
-	// drop privileges
-	if (!DEBUG) {
-		setgid(NOGROUP);
-		setuid(NOBODY);
-	}
-		
+    // drop privileges
+    if (!DEBUG) {
+        r = setgid(NOGROUP);
+        if (r != 0) {
+            printf("setgid failed!\n");
+            return(-1);
+        }
+        r = setuid(NOBODY);
+        if (r != 0) {
+            printf("setuid failed!\n");
+            return(-1);
+        }
+    }
+
 	for (;;) {
 		// populate poll array
 		for (pfd_num = 1, i = 0; i < MAX_PEERS; i++) {	
