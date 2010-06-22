@@ -50,6 +50,27 @@ static int multireq = 0;
 /* Return a positive positional number or -1 for unfound entries. */
 int request_find(uint id)
 {
+     /* REFACTOR You know, we should pass around pointers to `struct
+        peer_t` objects and nameserver addresses and `struct
+        request_t`s, instead of integers indexing into arrays. This
+        would have the following benefits:
+
+        - we could greatly reduce the amount of pointer arithmetic
+          (e.g. &peers[peer]), and instead of bounds-checking the
+          offsets at the entry to every function (inconsistently;
+          you’ll notice that here he forgot to bounds-check ns) we
+          could just bounds-check them in the very few places where we
+          generate the pointers;
+
+        - the compiler will be able to warn us if we accidentally pass
+          a nameserver index where we meant to pass a request index;
+
+        - knowledge of the peers, requests, and nameservers arrays
+          could be confined to a small part of the program, making the
+          program easier to understand and review.
+
+     */
+
     uint pos = id % MAX_REQUESTS;
 
     for (;;) {
@@ -84,6 +105,14 @@ int peer_connect(uint peer, int ns)
 
     p = &peers[peer];
 
+    /* BUG There should be a check to see if we’re already in a
+        CONNECTING or CONNECTING2 state at this point; otherwise we
+        leak a file descriptor in the next statement, and frequent
+        enough calls to this function (i.e. frequent enough DNS
+        requests) will also prevent the connection from ever being
+        made! */
+
+
     if ((p->tcp_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
         printf("Can't create TCP socket\n");
         return 0;
@@ -104,6 +133,12 @@ int peer_connect(uint peer, int ns)
 
     printf("connecting to %s on port %i\n", inet_ntoa(p->tcp.sin_addr), ntohs(p->tcp.sin_port));
     cs = connect(p->tcp_fd, (struct sockaddr*)&p->tcp, sizeof(struct sockaddr_in));
+
+    /* BUG This will print spurious error messages, because it should
+        almost always return an EINPROGRESS error.  And probably, if it
+        returns a different error, we shouldn’t return 1 and set ->con
+        = CONNECTING. */
+
     if (cs != 0) perror("connect status:");
 
     // We should be in non-blocking mode now
@@ -126,6 +161,22 @@ int peer_connected(uint peer)
     }
 
     p = &peers[peer];
+
+     /* QUASIBUG This is not documented as a correct way to poll for
+        connection establishment. Linux connect(2) says: “Generally,
+        connection-based protocol sockets may successfully connect()
+        only once...It is possible to select(2) or poll(2) for
+        completion by selecting the socket for writing.  After
+        select(2) indicates writability, use getsockopt(2) to read the
+        SO_ERROR option at level SOL_SOCKET to determine whether
+        connect() completed successfully (SO_ERROR is zero) or
+        unsuccessfully (SO_ERROR is one of the usual error codes listed
+        here, explaining the reason for the failure).”
+
+        If this works the way it’s documented to work, we should just
+        use the documented interface.
+     */
+
 
     cs = connect(p->tcp_fd, (struct sockaddr*)&p->tcp, sizeof(struct sockaddr_in));
 
@@ -170,9 +221,15 @@ int peer_sendreq(uint peer, int req)
     p = &peers[peer];
     r = &requests[req];
 
+     /* QUASIBUG Busy-waiting on the network buffer to free up some
+        space is not acceptable; at best, it wastes CPU; at worst, it
+        hangs the daemon until the TCP timeout informs it that its
+        connection to Tor has timed out. (Although that’s an unlikely
+        failure mode.) */
     while ((ret = write(p->tcp_fd, r->b, (r->bl + 2))) < 0 && errno == EAGAIN);
 
     if (ret == 0) {
+        /* REFACTOR the following three lines should be factored out into a function */
         close(p->tcp_fd);
         p->tcp_fd = -1;
         p->con = DEAD;
@@ -206,6 +263,18 @@ int peer_readres(uint peer)
     p = &peers[peer];
     l = (unsigned short int*)p->b;
 
+     /* REFACTOR: Move magic number 1502 (resp. 1500) into an enum or
+        #define */
+     /* QUASIBUG: If you want this to work on Windows, you need to
+        `recv`, not `read` */
+     /* BUG: we’re reading on a TCP socket here, so we could in theory
+        get a partial response. Using TCP puts the onus on the user
+        program (i.e. this code) to buffer bytes until we have a
+        parseable response. This probably won’t happen very often in
+        practice because even with DF, the path MTU is unlikely to be
+        smaller than the DNS response. But it could happen.  And then
+        we fall into the `processanswer` code below without having the
+        whole answer. */
     while ((ret = read(p->tcp_fd, (p->b + p->bl), (1502 - p->bl))) < 0 && errno == EAGAIN);
 
     if (ret == 0) {
@@ -275,6 +344,12 @@ void peer_handleoutstanding(uint peer)
         printf("Something is wrong! peer is larger than MAX_PEERS: %i\n", peer);
     }
 
+    /* QUASIBUG It doesn’t make sense that sometimes `request_add`
+        will queue up a request to be sent to nameserver #2 when a
+        connection is already open to nameserver #1, but then send that
+        request to nameserver #3 if nameserver #3 happens to finish
+        opening its connection before nameserver #2. */
+
     for (i = 0; i < MAX_REQUESTS; i++) {
         if (requests[i].id != 0 && requests[i].active == WAITING) {
             requests[i].active = SENT;
@@ -299,7 +374,7 @@ int ns_select(void)
 
 /* Return 0 for a request that is pending or if all slots are full, otherwise
    return the value of peer_sendreq or peer_connect respectively... */
-int request_add(struct request_t *r)
+int request_add(struct request_t *r) /* I’ve verified that r->id is nonnegative: it comes from ntohs. */
 {
     uint pos = r->id % MAX_REQUESTS; // XXX r->id is unchecked
     int dst_peer;
@@ -310,7 +385,7 @@ int request_add(struct request_t *r)
     for (;;) {
         if (requests[pos].id == 0) {
             // this one is unused, take it
-            printf("new request added at pos: %d\n", requests[pos].id);
+            printf("new request added at pos: %d\n", requests[pos].id); /* BUG should be pos, not request[pos].id */
             break;
         }
         else {
@@ -320,6 +395,10 @@ int request_add(struct request_t *r)
                     return 0;
                 }
                 else {
+                     /* REFACTOR If it’s okay to do this, it would be
+                        simpler to always do it, instead of only on
+                        collisions. Then, if it’s buggy, it’ll show up
+                        consistently in testing. */
                     do {
                         r->id = ((rand()>>16) % 0xffff);
                     } while (r->id < 1);
@@ -344,7 +423,7 @@ int request_add(struct request_t *r)
         }
     }
 
-    r->timeout = time(NULL);
+    r->timeout = time(NULL); /* REFACTOR not ct? sloppy */
 
     // update id
     ul = (unsigned short int*)(r->b + 2);
@@ -357,10 +436,13 @@ int request_add(struct request_t *r)
 
     dst_peer = peer_select();
     if (peers[dst_peer].con == CONNECTED) {
-        r->active = SENT;
+        r->active = SENT; /* REFACTOR: this should move into peer_sendreq */
         return peer_sendreq(dst_peer, pos);
     }
     else {
+        // The request will be sent by peer_handleoutstanding when the
+        // connection is established. Actually (see QUASIBUG notice
+        // earlier) when *any* connection is established.
         return peer_connect(dst_peer, ns_select());
     }
 }
@@ -484,7 +566,23 @@ int server(char *bind_ip, int bind_port)
             memset((char*)&tmp, 0, sizeof(struct request_t)); // bzero
             tmp.al = sizeof(struct sockaddr_in);
 
+           /* QUASIBUG Okay, suppose hypothetically that
+           the socket somehow polled as readable but
+           then recvfrom failed with -EAGAIN (the
+           packet disappeared from kernel memory
+           somehow?).  This `while` loop is here
+           specifically to handle that case. But what
+           it does in that case is stupid: it hangs
+           the server, preventing it from forwarding
+           any further responses, until another DNS
+           request is received. The `while` loop
+           wrapping the recvfrom call should be
+           removed. */
+
             while ((tmp.bl = recvfrom(udp_fd, tmp.b+2, 1500, 0, (struct sockaddr*)&tmp.a, &tmp.al)) < 0 && errno == EAGAIN);
+            /* BUG and there should be error handling here
+             for other error conditions like ENOMEM and
+             EINTR, unlikely though those are. */
             // get request id
             ul = (unsigned short int*) (tmp.b + 2);
             tmp.rid = tmp.id = ntohs(*ul);

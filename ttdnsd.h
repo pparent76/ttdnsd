@@ -13,7 +13,7 @@
 // number of parallel connected tcp peers
 #define MAX_PEERS 1
 // request timeout
-#define MAX_TIME 3
+#define MAX_TIME 3 /* QUASIBUG 3 seconds is too short! */
 // number of trys per request (not used so far)
 #define MAX_TRY 1
 // maximal number of nameservers
@@ -61,11 +61,11 @@ typedef enum {
 } REQ_STATE;
 
 struct request_t {
-    struct sockaddr_in a;
+    struct sockaddr_in a; /* client’s IP/port */
     socklen_t al;
     unsigned char b[1502]; /**< request buffer */
     int bl; /**< bytes in request buffer */
-    uint id; /**< dns request id */
+    uint id; /**< dns request id; must be nonnegative */
     int rid; /**< real dns request id */
     REQ_STATE active; /**< 1=sent, 0=waiting for tcp to become connected */
     time_t timeout; /**< timeout of request */
