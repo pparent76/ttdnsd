@@ -501,189 +501,188 @@ int server(char *bind_ip, int bind_port)
 
 int load_nameservers(char *filename)
 {
-	FILE *fp;
+    FILE *fp;
     char line[MAX_LINE_SIZE] = {0};
-	unsigned long int ns;
+    unsigned long int ns;
 
 
-	if (!(fp = fopen(filename, "r"))) {
-		printf("can't open %s\n", filename);
-		return 0;
-	}
-	num_nameservers = 0;
-	if (!(nameservers = malloc(sizeof(unsigned long int) * MAX_NAMESERVERS))) {
-		fclose(fp);
-		return 0;
-	}
-	
-	if (!fp) return 0;
-	while (fgets(line, MAX_LINE_SIZE, fp)) { // properly terminate line
-		if (line[0] == '#' || line[0] == '\n' || line[0] == ' ') continue;
-		line[strlen(line)-1] = 0; // This is a tautology - do not compute, know the end
-		if (strstr(line, "192.168.") == line) continue;
-		if (strstr(line, "127.") == line) continue;
-		if (strstr(line, "10.") == line) continue;
-		if (inet_pton(AF_INET, line, &ns)) {
-			nameservers[num_nameservers] = ns;
-			num_nameservers++;
-			if (num_nameservers >= MAX_NAMESERVERS) {
-				printf("stopped loading nameservers after first %d\n", MAX_NAMESERVERS);
-				break;
-			}
-		}
-		else {
-			printf("%s: is not a valid IPv4 address\n", line);
-		}
-	}
-	fclose(fp);
-	nameservers = realloc(nameservers, sizeof(unsigned long int) * num_nameservers);
-	printf("%d nameservers loaded\n", num_nameservers);
-	
-	return 1;
+    if (!(fp = fopen(filename, "r"))) {
+        printf("can't open %s\n", filename);
+        return 0;
+    }
+    num_nameservers = 0;
+    if (!(nameservers = malloc(sizeof(unsigned long int) * MAX_NAMESERVERS))) {
+        fclose(fp);
+        return 0;
+    }
+
+    if (!fp) return 0;
+    while (fgets(line, MAX_LINE_SIZE, fp)) { // properly terminate line
+        if (line[0] == '#' || line[0] == '\n' || line[0] == ' ') continue;
+        line[strlen(line)-1] = 0; // This is a tautology - do not compute, know the end
+        if (strstr(line, "192.168.") == line) continue;
+        if (strstr(line, "127.") == line) continue;
+        if (strstr(line, "10.") == line) continue;
+        if (inet_pton(AF_INET, line, &ns)) {
+            nameservers[num_nameservers] = ns;
+            num_nameservers++;
+            if (num_nameservers >= MAX_NAMESERVERS) {
+                printf("stopped loading nameservers after first %d\n", MAX_NAMESERVERS);
+                break;
+            }
+        }
+        else {
+            printf("%s: is not a valid IPv4 address\n", line);
+        }
+    }
+    fclose(fp);
+    nameservers = realloc(nameservers, sizeof(unsigned long int) * num_nameservers);
+    printf("%d nameservers loaded\n", num_nameservers);
+
+    return 1;
 }
 
 int main(int argc, char **argv)
 {
-	int opt;
-	int debug = 0;
-	int dochroot = 1;
-	char resolvers[250] = {DEFAULT_RESOLVERS};
-	char bind_ip[250] = {DEFAULT_BIND_IP};
-	char chroot_dir[PATH_MAX] = {DEFAULT_CHROOT};
-	char tsocks_conf[PATH_MAX];
-	int log = 0;
-	int bind_port = DEFAULT_BIND_PORT;
-	int devnull;
-	char pid_file[PATH_MAX] = {0};
+    int opt;
+    int debug = 0;
+    int dochroot = 1;
+    char resolvers[250] = {DEFAULT_RESOLVERS};
+    char bind_ip[250] = {DEFAULT_BIND_IP};
+    char chroot_dir[PATH_MAX] = {DEFAULT_CHROOT};
+    char tsocks_conf[PATH_MAX];
+    int log = 0;
+    int bind_port = DEFAULT_BIND_PORT;
+    int devnull;
+    char pid_file[PATH_MAX] = {0};
     FILE *pf;
     int r;
-	
-	
-	while ((opt = getopt(argc, argv, "lhdcC:b:f:p:P:")) != EOF) {
-		switch (opt) {
-		// log debug to file
-		case 'l':
-			log = 1;
-			break;
-		// debug
-		case 'd':
-			debug = 1;
-			break;
-		// DON'T chroot
-		case 'c':
-			dochroot = 0;
-			break;
-		// Chroot directory
-		case 'C':
-			strncpy(chroot_dir, optarg, sizeof(chroot_dir)-1);
-			break;
-		// PORT
-		case 'p':
-			bind_port = atoi(optarg);
-			if (bind_port < 1) bind_port = DEFAULT_BIND_PORT;
-			break;
-		// config file
-		case 'f':
-			strncpy(resolvers, optarg, sizeof(resolvers)-1);
-			break;
-		// IP
-		case 'b':
-			strncpy(bind_ip, optarg, sizeof(bind_ip)-1);
-			break;
-		// PID file
-		case 'P':
-			strncpy(pid_file, optarg, sizeof(pid_file)-1);
-			break;
-		// help
-		case 'h':
-		default:
-			printf("%s", HELP_STR);
-			exit(0);
-			break;
-		}
-	}
 
-	srand(time(NULL)); // This should use OpenSSL in the future
-	
-	if (getuid() != 0 && (bind_port == DEFAULT_BIND_PORT || dochroot == 1)) {
-		printf("ttdnsd must run as root to bind to port 53 and chroot(2)\n");
-		exit(1);
-	}
+    while ((opt = getopt(argc, argv, "lhdcC:b:f:p:P:")) != EOF) {
+        switch (opt) {
+        // log debug to file
+        case 'l':
+            log = 1;
+            break;
+        // debug
+        case 'd':
+            debug = 1;
+            break;
+        // DON'T chroot
+        case 'c':
+            dochroot = 0;
+            break;
+        // Chroot directory
+        case 'C':
+            strncpy(chroot_dir, optarg, sizeof(chroot_dir)-1);
+            break;
+        // PORT
+        case 'p':
+            bind_port = atoi(optarg);
+            if (bind_port < 1) bind_port = DEFAULT_BIND_PORT;
+            break;
+        // config file
+        case 'f':
+            strncpy(resolvers, optarg, sizeof(resolvers)-1);
+            break;
+        // IP
+        case 'b':
+            strncpy(bind_ip, optarg, sizeof(bind_ip)-1);
+            break;
+        // PID file
+        case 'P':
+            strncpy(pid_file, optarg, sizeof(pid_file)-1);
+            break;
+        // help
+        case 'h':
+        default:
+            printf("%s", HELP_STR);
+            exit(0);
+            break;
+        }
+    }
 
-	if (!load_nameservers(resolvers)) { // perhaps we want to move this entirely into the chroot?
-		printf("can't open resolvers file %s, will try again after chroot\n", resolvers);
-	}
+    srand(time(NULL)); // This should use OpenSSL in the future
 
-	devnull = open("/dev/null", O_RDWR); // Leaked fd?
-	if (devnull < 0) {
-		printf("can't open /dev/null, exit\n");
-		exit(1);
-	}
+    if (getuid() != 0 && (bind_port == DEFAULT_BIND_PORT || dochroot == 1)) {
+        printf("ttdnsd must run as root to bind to port 53 and chroot(2)\n");
+        exit(1);
+    }
 
-	// become a daemon
-	if (!debug) {
-		if (fork()) exit(0); // Could be clearer
-		setsid(); // Safe?
-	}
+    if (!load_nameservers(resolvers)) { // perhaps we want to move this entirely into the chroot?
+        printf("can't open resolvers file %s, will try again after chroot\n", resolvers);
+    }
+
+    devnull = open("/dev/null", O_RDWR); // Leaked fd?
+    if (devnull < 0) {
+        printf("can't open /dev/null, exit\n");
+        exit(1);
+    }
+
+    // become a daemon
+    if (!debug) {
+        if (fork()) exit(0); // Could be clearer
+        setsid(); // Safe?
+    }
 
     /* Why does this happen before the chroot? */
-	// write PID to file
-	if (strlen(pid_file) > 0) {
-		int pfd = open(pid_file, O_WRONLY|O_TRUNC|O_CREAT, 00644);
-		if (pfd < 0) {
-			printf("can't open pid file %s, exit\n", pid_file);
-			exit(1);
-		}
-		pf = fdopen(pfd, "w");
-		if (pf == NULL) {
-			printf("can't reopen pid file %s, exit\n", pid_file);
-			exit(1);
-		}
-		fprintf(pf, "%d", getpid());
-		fclose(pf);
-		close(pfd);
-	}
-	
-	if (dochroot) {	
-		if (chdir(chroot_dir)) {
-			printf("can't chdir to %s, exit\n", chroot_dir);
-			exit(1);
-		}
-		if (chroot(chroot_dir)) {
-			printf("can't chroot to %s, exit\n", chroot_dir);
-			exit(1);
-		}
-		// since we chroot, check for the tsocks config
+    // write PID to file
+    if (strlen(pid_file) > 0) {
+        int pfd = open(pid_file, O_WRONLY|O_TRUNC|O_CREAT, 00644);
+        if (pfd < 0) {
+            printf("can't open pid file %s, exit\n", pid_file);
+            exit(1);
+        }
+        pf = fdopen(pfd, "w");
+        if (pf == NULL) {
+            printf("can't reopen pid file %s, exit\n", pid_file);
+            exit(1);
+        }
+        fprintf(pf, "%d", getpid());
+        fclose(pf);
+        close(pfd);
+    }
+
+    if (dochroot) {
+        if (chdir(chroot_dir)) {
+            printf("can't chdir to %s, exit\n", chroot_dir);
+            exit(1);
+        }
+        if (chroot(chroot_dir)) {
+            printf("can't chroot to %s, exit\n", chroot_dir);
+            exit(1);
+        }
+        // since we chroot, check for the tsocks config
         strncpy(tsocks_conf, getenv(TSOCKS_CONF_ENV), PATH_MAX-1);
         tsocks_conf[PATH_MAX-1] = '\0';
-		if (access(tsocks_conf, R_OK)) { /* access() is a race condition and unsafe */
-			printf("chroot=%s, can't access tsocks config at %s, exit\n", chroot_dir, tsocks_conf);
-			exit(1);
-		}
-	}
-		
-	// privs will be dropped in server right after binding to port 53	
-	
-	if (log) {
-		int lfd;
-		lfd = open(DEFAULT_LOG, O_WRONLY|O_APPEND|O_CREAT, 00644);
-		if (lfd < 0) {
-			if (dochroot) printf("chroot=%s ", chroot_dir);
-			printf("can't open log file %s, exit\n", DEFAULT_LOG);
-			exit(1);
-		}
-		dup2(lfd, 1);
-		dup2(lfd, 2);
-		close(lfd);
-		dup2(devnull, 0);
-		close(devnull);
-	}
-	else if (!debug) {
-		dup2(devnull, 0);
-		dup2(devnull, 1);
-		dup2(devnull, 2);
-		close(devnull);
-	}
+        if (access(tsocks_conf, R_OK)) { /* access() is a race condition and unsafe */
+            printf("chroot=%s, can't access tsocks config at %s, exit\n", chroot_dir, tsocks_conf);
+            exit(1);
+        }
+    }
+
+    // privs will be dropped in server right after binding to port 53
+
+    if (log) {
+        int lfd;
+        lfd = open(DEFAULT_LOG, O_WRONLY|O_APPEND|O_CREAT, 00644);
+        if (lfd < 0) {
+            if (dochroot) printf("chroot=%s ", chroot_dir);
+            printf("can't open log file %s, exit\n", DEFAULT_LOG);
+            exit(1);
+        }
+        dup2(lfd, 1);
+        dup2(lfd, 2);
+        close(lfd);
+        dup2(devnull, 0);
+        close(devnull);
+    }
+    else if (!debug) {
+        dup2(devnull, 0);
+        dup2(devnull, 1);
+        dup2(devnull, 2);
+        close(devnull);
+    }
 
     r = server(bind_ip, bind_port);
     if (r!=0)
