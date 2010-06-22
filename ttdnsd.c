@@ -385,21 +385,21 @@ int server(char *bind_ip, int bind_port)
 
     // setup listing port - someday we may also want to listen on TCP just for fun
     if ((udp_fd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
-    	printf("can't create UDP socket\n");
-    	return(-1);
+        printf("can't create UDP socket\n");
+        return(-1);
     }
     memset((char*)&udp, 0, sizeof(struct sockaddr_in)); // bzero love
     udp.sin_family = AF_INET;
     udp.sin_port = htons(bind_port);
     if (!inet_aton(bind_ip, (struct in_addr*)&udp.sin_addr)) {
-		printf("is not a valid IPv4 address: %s\n", bind_ip);
-		return(0); // Why is this 0?
-	}
-	if (bind(udp_fd, (struct sockaddr*)&udp, sizeof(struct sockaddr_in)) < 0) {
-		close(udp_fd);
-		printf("can't bind to %s:%d\n", bind_ip, bind_port);
-		return(-1); // Perhaps this should be more useful?
-	}
+        printf("is not a valid IPv4 address: %s\n", bind_ip);
+        return(0); // Why is this 0?
+    }
+    if (bind(udp_fd, (struct sockaddr*)&udp, sizeof(struct sockaddr_in)) < 0) {
+        close(udp_fd);
+        printf("can't bind to %s:%d\n", bind_ip, bind_port);
+        return(-1); // Perhaps this should be more useful?
+    }
 
     // drop privileges
     if (!DEBUG) {
@@ -415,15 +415,15 @@ int server(char *bind_ip, int bind_port)
         }
     }
 
-	for (;;) {
-		// populate poll array
-		for (pfd_num = 1, i = 0; i < MAX_PEERS; i++) {	
-			if (peers[i].tcp_fd != -1) {
-				pfd[pfd_num].fd = peers[i].tcp_fd;
-				switch (peers[i].con) {
-				case CONNECTED:
-					pfd[pfd_num].events = POLLIN|POLLPRI;
-					break;
+    for (;;) {
+        // populate poll array
+        for (pfd_num = 1, i = 0; i < MAX_PEERS; i++) {	
+            if (peers[i].tcp_fd != -1) {
+                pfd[pfd_num].fd = peers[i].tcp_fd;
+                switch (peers[i].con) {
+                case CONNECTED:
+                    pfd[pfd_num].events = POLLIN|POLLPRI;
+                    break;
                 case DEAD:
                     pfd[pfd_num].events = POLLOUT|POLLERR;
                     break;
@@ -433,70 +433,70 @@ int server(char *bind_ip, int bind_port)
                 case CONNECTING2:
                     pfd[pfd_num].events = POLLOUT|POLLERR;
                     break;
-				default:
-					pfd[pfd_num].events = POLLOUT|POLLERR;
-					break;
-				}
-				poll2peers[pfd_num-1] = i;
-				pfd_num++;
-			}
-		}
-	
-		pfd[0].fd = udp_fd;
-		pfd[0].events = POLLIN|POLLPRI;
-		
-		printf("watching %d file descriptors\n", pfd_num);
-		
-		fr = poll(pfd, pfd_num, -1);
-		
-		printf("%d file descriptors became ready\n", fr);
+                default:
+                    pfd[pfd_num].events = POLLOUT|POLLERR;
+                    break;
+                }
+                poll2peers[pfd_num-1] = i;
+                pfd_num++;
+            }
+        }
 
-		// handle tcp connections
-		for (i = 1; i < pfd_num; i++) {
-			if (pfd[i].fd != -1 && ((pfd[i].revents & POLLIN) == POLLIN || 
-					(pfd[i].revents & POLLPRI) == POLLPRI || (pfd[i].revents & POLLOUT) 
-					== POLLOUT || (pfd[i].revents & POLLERR) == POLLERR)) {
-				
-				switch (peers[poll2peers[i-1]].con) {
-				case CONNECTED:
-					peer_readres(poll2peers[i-1]);
-					break;
-				case CONNECTING:
-				case CONNECTING2:
-					if (peer_connected(poll2peers[i-1])) {
-						peer_handleoutstanding(poll2peers[i-1]);
-					}
-					break;
+        pfd[0].fd = udp_fd;
+        pfd[0].events = POLLIN|POLLPRI;
+
+        printf("watching %d file descriptors\n", pfd_num);
+
+        fr = poll(pfd, pfd_num, -1);
+
+        printf("%d file descriptors became ready\n", fr);
+
+        // handle tcp connections
+        for (i = 1; i < pfd_num; i++) {
+            if (pfd[i].fd != -1 && ((pfd[i].revents & POLLIN) == POLLIN || 
+                    (pfd[i].revents & POLLPRI) == POLLPRI || (pfd[i].revents & POLLOUT) 
+                    == POLLOUT || (pfd[i].revents & POLLERR) == POLLERR)) {
+
+                switch (peers[poll2peers[i-1]].con) {
+                case CONNECTED:
+                    peer_readres(poll2peers[i-1]);
+                    break;
+                case CONNECTING:
+                case CONNECTING2:
+                    if (peer_connected(poll2peers[i-1])) {
+                        peer_handleoutstanding(poll2peers[i-1]);
+                    }
+                    break;
                 case DEAD:
                     printf("peer %d in bad state\n", peers[poll2peers[i-1]].con);
                     break;
-				default:
-					printf("peer %d in bad state\n", peers[poll2peers[i-1]].con);
-					break;
-				}
-			}
-		}
-	
-		// handle port 53
-		if ((pfd[0].revents & POLLIN) == POLLIN || (pfd[0].revents & POLLPRI) == POLLPRI) {
-			unsigned short int *ul;
-			
-			memset((char*)&tmp, 0, sizeof(struct request_t));
-			tmp.al = sizeof(struct sockaddr_in);
-			
-			while ((tmp.bl = recvfrom(udp_fd, tmp.b+2, 1500, 0, (struct sockaddr*)&tmp.a, &tmp.al)) < 0 && errno == EAGAIN);
-			// get request id
-			ul = (unsigned short int*) (tmp.b + 2);
-			tmp.rid = tmp.id = ntohs(*ul);
-			// get request length
-			ul = (unsigned short int*)tmp.b;
-			*ul = htons(tmp.bl);
-			
-			printf("received request of %d bytes, id = %d\n", tmp.bl, tmp.id);
-			
-			request_add(&tmp); // This should be checked, we're currently ignoring imporant returns
-		}
-	}
+                default:
+                    printf("peer %d in bad state\n", peers[poll2peers[i-1]].con);
+                    break;
+                }
+            }
+        }
+
+        // handle port 53
+        if ((pfd[0].revents & POLLIN) == POLLIN || (pfd[0].revents & POLLPRI) == POLLPRI) {
+            unsigned short int *ul;
+
+            memset((char*)&tmp, 0, sizeof(struct request_t)); // bzero
+            tmp.al = sizeof(struct sockaddr_in);
+
+            while ((tmp.bl = recvfrom(udp_fd, tmp.b+2, 1500, 0, (struct sockaddr*)&tmp.a, &tmp.al)) < 0 && errno == EAGAIN);
+            // get request id
+            ul = (unsigned short int*) (tmp.b + 2);
+            tmp.rid = tmp.id = ntohs(*ul);
+            // get request length
+            ul = (unsigned short int*)tmp.b;
+            *ul = htons(tmp.bl);
+
+            printf("received request of %d bytes, id = %d\n", tmp.bl, tmp.id);
+
+            request_add(&tmp); // This should be checked, we're currently ignoring imporant returns
+        }
+    }
 }
 
 int load_nameservers(char *filename)
