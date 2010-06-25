@@ -103,28 +103,9 @@ int peer_connect(struct peer_t *p, struct in_addr ns)
     int socket_opt_val = 1;
     int cs;
 
-    /* REFACTOR You know, we should pass around pointers to `struct
-       peer_t` objects and nameserver addresses and `struct
-       request_t`s, instead of integers indexing into arrays. This
-       would have the following benefits:
-
-       - we could greatly reduce the amount of pointer arithmetic
-         (e.g. &peers[peer]), and instead of bounds-checking the
-         offsets at the entry to every function (inconsistently;
-         you’ll notice that here he forgot to bounds-check ns) we
-         could just bounds-check them in the very few places where we
-         generate the pointers;
-
-       - the compiler will be able to warn us if we accidentally pass
-         a nameserver index where we meant to pass a request index;
-
-       - knowledge of the peers, requests, and nameservers arrays
-         could be confined to a small part of the program, making the
-         program easier to understand and review.
-
-    */
     if (p->con == CONNECTING || p->con == CONNECTING2) {
-        printf("It appears that peer %s is already CONNECTING\n", peer_display(p));
+        printf("It appears that peer %s is already CONNECTING\n", 
+               peer_display(p));
         return 1;
     }
 
