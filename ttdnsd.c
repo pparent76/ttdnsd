@@ -158,19 +158,9 @@ int peer_connect(struct peer_t *p, int ns)
 }
 
 /* Returns 1 upon non-blocking connection; 0 upon serious error */
-int peer_connected(uint peer)
+int peer_connected(struct peer_t *p)
 {
-    struct peer_t *p;
     int cs;
-
-    if (peer > MAX_PEERS)
-    {
-        printf("Something is wrong! peer is larger than MAX_PEERS: %i\n", peer);
-        return 0;
-    }
-
-    p = &peers[peer];
-
      /* QUASIBUG This is not documented as a correct way to poll for
         connection establishment. Linux connect(2) says: “Generally,
         connection-based protocol sockets may successfully connect()
@@ -549,7 +539,9 @@ int server(char *bind_ip, int bind_port)
                     break;
                 case CONNECTING:
                 case CONNECTING2:
-                    if (peer_connected(peer)) {
+                    if (peer > MAX_PEERS) {
+                        printf("Something is wrong! peer is larger than MAX_PEERS: %i\n", peer);
+                    } else if (peer_connected(p)) {
                         peer_handleoutstanding(peer);
                     }
                     break;
