@@ -91,7 +91,7 @@ int peer_connected(uint peer);
 int peer_sendreq(struct peer_t *p, int req);
 int peer_readres(uint peer);
 void peer_handleoutstanding(uint peer);
-int peer_select(void);
+struct peer_t *peer_select(void);
 int ns_select(void);
 int request_add(struct request_t *r);
 int server(char *bind_ip, int bind_port);

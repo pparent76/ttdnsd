@@ -361,9 +361,9 @@ void peer_handleoutstanding(uint peer)
 /* REFACTOR if we aren't going to round-robin among the peers, we
    should remove all the complexity having to do with having more than
    one peer. */
-int peer_select(void)
+struct peer_t *peer_select(void)
 {
-    return 0;
+    return &peers[0];
 }
 
 /* Selects a random nameserver from the pool and returns the number. */
@@ -378,7 +378,7 @@ int ns_select(void)
 int request_add(struct request_t *r) /* I’ve verified that r->id is nonnegative: it comes from ntohs. */
 {
     uint pos = r->id % MAX_REQUESTS; // XXX r->id is unchecked
-    int dst_peer;
+    struct peer_t *dst_peer;
     unsigned short int *ul;
     time_t ct = time(NULL);
 
@@ -437,20 +437,15 @@ int request_add(struct request_t *r) /* I’ve verified that r->id is nonnegativ
 
     dst_peer = peer_select();
 
-    if (dst_peer > MAX_PEERS) { // Perhaps we should just assert() and die entirely?
-        printf("Something is wrong! peer is larger than MAX_PEERS: %i\n", dst_peer);
-        return 0;
-    }
-
-    if (peers[dst_peer].con == CONNECTED) {
+    if (dst_peer->con == CONNECTED) {
         r->active = SENT; /* REFACTOR: this should move into peer_sendreq */
-        return peer_sendreq(&peers[dst_peer], pos);
+        return peer_sendreq(dst_peer, pos);
     }
     else {
         // The request will be sent by peer_handleoutstanding when the
         // connection is established. Actually (see QUASIBUG notice
         // earlier) when *any* connection is established.
-        return peer_connect(&peers[dst_peer], ns_select());
+        return peer_connect(dst_peer, ns_select());
     }
 }
 
