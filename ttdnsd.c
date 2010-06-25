@@ -322,15 +322,10 @@ processanswer:
 }
 
 /* Handles outstanding peer requests and does not return anything. */
-void peer_handleoutstanding(uint peer)
+void peer_handleoutstanding(struct peer_t *p)
 {
     int i;
     int ret;
-
-    if (peer > MAX_PEERS)
-    {
-        printf("Something is wrong! peer is larger than MAX_PEERS: %i\n", peer);
-    }
 
     /* QUASIBUG It doesn’t make sense that sometimes `request_add`
         will queue up a request to be sent to nameserver #2 when a
@@ -341,7 +336,7 @@ void peer_handleoutstanding(uint peer)
     for (i = 0; i < MAX_REQUESTS; i++) {
         if (requests[i].id != 0 && requests[i].active == WAITING) {
             requests[i].active = SENT;
-            ret = peer_sendreq(&peers[peer], i);
+            ret = peer_sendreq(p, i);
             printf("peer_sendreq returned %d\n", ret);
         }
     }
@@ -542,7 +537,7 @@ int server(char *bind_ip, int bind_port)
                     if (peer > MAX_PEERS) {
                         printf("Something is wrong! peer is larger than MAX_PEERS: %i\n", peer);
                     } else if (peer_connected(p)) {
-                        peer_handleoutstanding(peer);
+                        peer_handleoutstanding(p);
                     }
                     break;
                 case DEAD:
