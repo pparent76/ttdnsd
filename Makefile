@@ -10,6 +10,7 @@ OPENSSLLIB = ssl
 # If the program ever grows, we'll enjoy this macro:
 SRCFILES := $(wildcard *.c)
 OBJFILES := $(patsubst %.c,%.o,$(wildcard *.c))
+SUDO = sudo
 
 # Build host specific additionals.  Uncomment whatever matches your situation.
 # For BSD's with pkgsrc:
@@ -63,6 +64,11 @@ demo: install
 	TSOCKS_CONF_FILE=tsocks.conf ttdnsd -b 127.0.0.1 -p 53 \
     -P /var/run/ttdnsd/pid -l
 	echo "Attempting to lookup MX record for torproject.org through ttdnsd"
+	dig @127.0.0.1 -t mx torproject.org
+
+test: all
+	-$(SUDO) killall -9 ttdnsd
+	$(SUDO) sh -ec 'TSOCKS_CONF_FILE=tsocks.conf ./ttdnsd -l'
 	dig @127.0.0.1 -t mx torproject.org
 
 deb-src:
