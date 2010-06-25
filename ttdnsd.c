@@ -131,12 +131,10 @@ int peer_connect(struct peer_t *p, struct in_addr ns)
     printf("connecting to %s on port %i\n", peer_display(p), ntohs(p->tcp.sin_port));
     cs = connect(p->tcp_fd, (struct sockaddr*)&p->tcp, sizeof(struct sockaddr_in));
 
-    /* BUG This will print spurious error messages, because it should
-        almost always return an EINPROGRESS error.  And probably, if it
-        returns a different error, we shouldn’t return 1 and set ->con
-        = CONNECTING. */
-
-    if (cs != 0) perror("connect status:");
+    if (cs != 0 && errno != EINPROGRESS) {
+        perror("connect status");
+        return 0;
+    }
 
     // We should be in non-blocking mode now
     p->bl = 0;
