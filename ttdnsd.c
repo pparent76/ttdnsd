@@ -363,7 +363,7 @@ int request_add(struct request_t *r)
     for (;;) {
         if (requests[pos].id == 0) {
             // this one is unused, take it
-            printf("new request added at pos: %d\n", requests[pos].id); /* BUG should be pos, not request[pos].id */
+            printf("new request added at pos: %d\n", pos);
             req_in_table = &requests[pos];
             break;
         }
@@ -401,6 +401,7 @@ int request_add(struct request_t *r)
             }
         }
     }
+    printf("using request slot %d\n", pos); /* REFACTOR: move into loop */
 
     r->timeout = time(NULL); /* REFACTOR not ct? sloppy */
 
@@ -409,7 +410,6 @@ int request_add(struct request_t *r)
     *ul = htons(r->id);
 
 
-    printf("using request slot %d\n", pos); /* REFACTOR: move into loop */
     memcpy((char*)req_in_table, (char*)r, sizeof(*req_in_table));
 
     // XXX: nice feature to have: send request to multiple peers for speedup and reliability
