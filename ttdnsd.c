@@ -358,6 +358,9 @@ void peer_handleoutstanding(uint peer)
 }
 
 /* Currently, we only return the 0th peer. Someday we might want more? */
+/* REFACTOR if we aren't going to round-robin among the peers, we
+   should remove all the complexity having to do with having more than
+   one peer. */
 int peer_select(void)
 {
     return 0;
