@@ -408,6 +408,19 @@ int request_add(struct request_t *r)
     }
 }
 
+static void process_incoming_request(struct request_t *tmp) {
+    // get request id
+    unsigned short int *ul = (unsigned short int*) (tmp->b + 2);
+    tmp->rid = tmp->id = ntohs(*ul);
+    // get request length
+    ul = (unsigned short int*)tmp->b;
+    *ul = htons(tmp->bl);
+
+    printf("received request of %d bytes, id = %d\n", tmp->bl, tmp->id);
+
+    request_add(tmp); // This should be checked; we're currently ignoring important returns.
+}
+
 int server(char *bind_ip, int bind_port)
 {
     struct sockaddr_in udp;
@@ -416,7 +429,6 @@ int server(char *bind_ip, int bind_port)
     int fr;
     int i;
     int pfd_num;
-    struct request_t tmp;
     int r;
 
     for (i = 0; i < MAX_PEERS; i++) {
@@ -524,38 +536,17 @@ int server(char *bind_ip, int bind_port)
 
         // handle port 53
         if ((pfd[0].revents & POLLIN) == POLLIN || (pfd[0].revents & POLLPRI) == POLLPRI) {
-            unsigned short int *ul;
-
+            struct request_t tmp;
             memset((char*)&tmp, 0, sizeof(struct request_t)); // bzero
             tmp.al = sizeof(struct sockaddr_in);
 
-           /* QUASIBUG Okay, suppose hypothetically that
-           the socket somehow polled as readable but
-           then recvfrom failed with -EAGAIN (the
-           packet disappeared from kernel memory
-           somehow?).  This `while` loop is here
-           specifically to handle that case. But what
-           it does in that case is stupid: it hangs
-           the server, preventing it from forwarding
-           any further responses, until another DNS
-           request is received. The `while` loop
-           wrapping the recvfrom call should be
-           removed. */
-
-            while ((tmp.bl = recvfrom(udp_fd, tmp.b+2, RECV_BUF_SIZE-2, 0, (struct sockaddr*)&tmp.a, &tmp.al)) < 0 && errno == EAGAIN);
-            /* BUG and there should be error handling here
-             for other error conditions like ENOMEM and
-             EINTR, unlikely though those are. */
-            // get request id
-            ul = (unsigned short int*) (tmp.b + 2);
-            tmp.rid = tmp.id = ntohs(*ul);
-            // get request length
-            ul = (unsigned short int*)tmp.b;
-            *ul = htons(tmp.bl);
-
-            printf("received request of %d bytes, id = %d\n", tmp.bl, tmp.id);
-
-            request_add(&tmp); // This should be checked, we're currently ignoring imporant returns
+            tmp.bl = recvfrom(udp_fd, tmp.b+2, RECV_BUF_SIZE-2, 0, 
+                              (struct sockaddr*)&tmp.a, &tmp.al);
+            if (tmp.bl < 0) {
+                perror("recvfrom on UDP fd");
+            } else {
+                process_incoming_request(&tmp);
+            }
         }
     }
 }
