@@ -50,27 +50,6 @@ static int multireq = 0;
 /* Return a positive positional number or -1 for unfound entries. */
 int request_find(uint id)
 {
-     /* REFACTOR You know, we should pass around pointers to `struct
-        peer_t` objects and nameserver addresses and `struct
-        request_t`s, instead of integers indexing into arrays. This
-        would have the following benefits:
-
-        - we could greatly reduce the amount of pointer arithmetic
-          (e.g. &peers[peer]), and instead of bounds-checking the
-          offsets at the entry to every function (inconsistently;
-          you’ll notice that here he forgot to bounds-check ns) we
-          could just bounds-check them in the very few places where we
-          generate the pointers;
-
-        - the compiler will be able to warn us if we accidentally pass
-          a nameserver index where we meant to pass a request index;
-
-        - knowledge of the peers, requests, and nameservers arrays
-          could be confined to a small part of the program, making the
-          program easier to understand and review.
-
-     */
-
     uint pos = id % MAX_REQUESTS;
 
     for (;;) {
