@@ -540,22 +540,23 @@ int server(char *bind_ip, int bind_port)
             if (pfd[i].fd != -1 && ((pfd[i].revents & POLLIN) == POLLIN || 
                     (pfd[i].revents & POLLPRI) == POLLPRI || (pfd[i].revents & POLLOUT) 
                     == POLLOUT || (pfd[i].revents & POLLERR) == POLLERR)) {
+                uint peer = poll2peers[i-1];
 
-                switch (peers[poll2peers[i-1]].con) {
+                switch (peers[peer].con) {
                 case CONNECTED:
-                    peer_readres(poll2peers[i-1]);
+                    peer_readres(peer);
                     break;
                 case CONNECTING:
                 case CONNECTING2:
-                    if (peer_connected(poll2peers[i-1])) {
-                        peer_handleoutstanding(poll2peers[i-1]);
+                    if (peer_connected(peer)) {
+                        peer_handleoutstanding(peer);
                     }
                     break;
                 case DEAD:
-                    printf("peer %d in bad state\n", peers[poll2peers[i-1]].con);
+                    printf("peer %d in bad state\n", peers[peer].con);
                     break;
                 default:
-                    printf("peer %d in bad state\n", peers[poll2peers[i-1]].con);
+                    printf("peer %d in bad state\n", peers[peer].con);
                     break;
                 }
             }
