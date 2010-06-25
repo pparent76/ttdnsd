@@ -185,6 +185,14 @@ int peer_keepalive(uint peer)
 }
 */
 
+static void peer_mark_as_dead(struct peer_t *p)
+{
+    close(p->tcp_fd);
+    p->tcp_fd = -1;
+    p->con = DEAD;
+    printf("peer %s got disconnected\n", peer_display(p));
+}
+
 /* Returns 1 upon sent request; 0 upon serious error and 2 upon disconnect */
 int peer_sendreq(struct peer_t *p, struct request_t *r)
 {
@@ -198,11 +206,7 @@ int peer_sendreq(struct peer_t *p, struct request_t *r)
     while ((ret = write(p->tcp_fd, r->b, (r->bl + 2))) < 0 && errno == EAGAIN);
 
     if (ret == 0) {
-        /* REFACTOR the following three lines should be factored out into a function */
-        close(p->tcp_fd);
-        p->tcp_fd = -1;
-        p->con = DEAD;
-        printf("peer %s got disconnected\n", peer_display(p));
+        peer_mark_as_dead(p);
         return 2;
     }
 
@@ -235,10 +239,7 @@ int peer_readres(struct peer_t *p)
     while ((ret = recv(p->tcp_fd, (p->b + p->bl), (RECV_BUF_SIZE - p->bl), MSG_DONTWAIT)) < 0 && errno == EAGAIN);
 
     if (ret == 0) {
-        close(p->tcp_fd);
-        p->tcp_fd = -1;
-        printf("peer %s got disconnected\n", peer_display(p));
-        p->con = DEAD;
+        peer_mark_as_dead(p);
         return 3;
     }
 
