@@ -541,8 +541,9 @@ int server(char *bind_ip, int bind_port)
                     (pfd[i].revents & POLLPRI) == POLLPRI || (pfd[i].revents & POLLOUT) 
                     == POLLOUT || (pfd[i].revents & POLLERR) == POLLERR)) {
                 uint peer = poll2peers[i-1];
+                struct peer_t *p = &peers[peer];
 
-                switch (peers[peer].con) {
+                switch (p->con) {
                 case CONNECTED:
                     peer_readres(peer);
                     break;
@@ -553,10 +554,10 @@ int server(char *bind_ip, int bind_port)
                     }
                     break;
                 case DEAD:
-                    printf("peer %d in bad state\n", peers[peer].con);
+                    printf("peer %d in bad state\n", p->con); /* BUG */
                     break;
                 default:
-                    printf("peer %d in bad state\n", peers[peer].con);
+                    printf("peer %d in bad state\n", p->con); /* BUG */
                     break;
                 }
             }
