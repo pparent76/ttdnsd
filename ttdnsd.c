@@ -27,14 +27,14 @@
 #include "ttdnsd.h"
 
 /*
- *  binary is linked with libtsocks therefore all TCP connections will
- *  be routed over Tor (if tsocks.conf is setup to chain with Tor)
+ *  Binary is linked with libtsocks therefore all TCP connections will
+ *  be routed over Tor (if tsocks.conf is set up to chain with Tor).
  *
- *  see makefile about disableing tsocks (for testing)
+ *  See Makefile about disabling tsocks (for testing).
  *
  */
 
-static unsigned long int *nameservers; /**< nameservers pool */
+static struct in_addr *nameservers; /**< nameservers pool */
 static unsigned int num_nameservers; /**< number of nameservers */
 
 static struct peer_t peers[MAX_PEERS]; /**< TCP peers */
@@ -50,27 +50,6 @@ static int multireq = 0;
 /* Return a positive positional number or -1 for unfound entries. */
 int request_find(uint id)
 {
-     /* REFACTOR You know, we should pass around pointers to `struct
-        peer_t` objects and nameserver addresses and `struct
-        request_t`s, instead of integers indexing into arrays. This
-        would have the following benefits:
-
-        - we could greatly reduce the amount of pointer arithmetic
-          (e.g. &peers[peer]), and instead of bounds-checking the
-          offsets at the entry to every function (inconsistently;
-          you’ll notice that here he forgot to bounds-check ns) we
-          could just bounds-check them in the very few places where we
-          generate the pointers;
-
-        - the compiler will be able to warn us if we accidentally pass
-          a nameserver index where we meant to pass a request index;
-
-        - knowledge of the peers, requests, and nameservers arrays
-          could be confined to a small part of the program, making the
-          program easier to understand and review.
-
-     */
-
     uint pos = id % MAX_REQUESTS;
 
     for (;;) {
@@ -90,23 +69,22 @@ int request_find(uint id)
 }
 
 
-/* Returns 1 upon non-blocking connection setup; 0 upon serious error */
-int peer_connect(uint peer, int ns)
+/* Returns a display name for the peer; currently inet_ntoa, so
+   statically allocated */
+static const char *peer_display(struct peer_t *p) 
 {
-    struct peer_t *p;
+    return inet_ntoa(p->tcp.sin_addr);
+}
+
+/* Returns 1 upon non-blocking connection setup; 0 upon serious error */
+int peer_connect(struct peer_t *p, struct in_addr ns)
+{
     int socket_opt_val = 1;
     int cs;
 
-    if (peer > MAX_PEERS) // Perhaps we should just assert() and die entirely?
-    {
-        printf("Something is wrong! peer is larger than MAX_PEERS: %i\n", peer);
-        return 0;
-    }
-
-    p = &peers[peer];
-
     if (p->con == CONNECTING || p->con == CONNECTING2) {
-        printf("It appears that peer %d is already CONNECTING\n", peer);
+        printf("It appears that peer %s is already CONNECTING\n", 
+               peer_display(p));
         return 1;
     }
 
@@ -127,17 +105,15 @@ int peer_connect(uint peer, int ns)
     // This should not be hardcoded to a magic number; per ns port data structure changes required
     p->tcp.sin_port = htons(53);
 
-    p->tcp.sin_addr.s_addr = nameservers[ns];
+    p->tcp.sin_addr = ns;
 
-    printf("connecting to %s on port %i\n", inet_ntoa(p->tcp.sin_addr), ntohs(p->tcp.sin_port));
+    printf("connecting to %s on port %i\n", peer_display(p), ntohs(p->tcp.sin_port));
     cs = connect(p->tcp_fd, (struct sockaddr*)&p->tcp, sizeof(struct sockaddr_in));
 
-    /* BUG This will print spurious error messages, because it should
-        almost always return an EINPROGRESS error.  And probably, if it
-        returns a different error, we shouldn’t return 1 and set ->con
-        = CONNECTING. */
-
-    if (cs != 0) perror("connect status:");
+    if (cs != 0 && errno != EINPROGRESS) {
+        perror("connect status");
+        return 0;
+    }
 
     // We should be in non-blocking mode now
     p->bl = 0;
@@ -147,19 +123,9 @@ int peer_connect(uint peer, int ns)
 }
 
 /* Returns 1 upon non-blocking connection; 0 upon serious error */
-int peer_connected(uint peer)
+int peer_connected(struct peer_t *p)
 {
-    struct peer_t *p;
     int cs;
-
-    if (peer > MAX_PEERS)
-    {
-        printf("Something is wrong! peer is larger than MAX_PEERS: %i\n", peer);
-        return 0;
-    }
-
-    p = &peers[peer];
-
      /* QUASIBUG This is not documented as a correct way to poll for
         connection establishment. Linux connect(2) says: “Generally,
         connection-based protocol sockets may successfully connect()
@@ -198,27 +164,19 @@ int peer_keepalive(uint peer)
 }
 */
 
-/* Returns 1 upon sent request; 0 upon serious error and 2 upon disconnect */
-int peer_sendreq(uint peer, int req)
+static void peer_mark_as_dead(struct peer_t *p)
 {
-    struct peer_t *p;
-    struct request_t *r;
+    close(p->tcp_fd);
+    p->tcp_fd = -1;
+    p->con = DEAD;
+    printf("peer %s got disconnected\n", peer_display(p));
+}
+
+/* Returns 1 upon sent request; 0 upon serious error and 2 upon disconnect */
+int peer_sendreq(struct peer_t *p, struct request_t *r)
+{
     int ret;
-
-    if (peer > MAX_PEERS)
-    {
-        printf("Something is wrong! peer is larger than MAX_PEERS: %i\n", peer);
-        return 0;
-    }
-
-    if (req > MAX_REQUESTS)
-    {
-        printf("Something is wrong! peer is larger than MAX_PEERS: %i\n", peer);
-        return 0;
-    }
-
-    p = &peers[peer];
-    r = &requests[req];
+    r->active = SENT;        /* BUG: even if the write below fails? */
 
      /* QUASIBUG Busy-waiting on the network buffer to free up some
         space is not acceptable; at best, it wastes CPU; at worst, it
@@ -228,11 +186,7 @@ int peer_sendreq(uint peer, int req)
     while ((ret = write(p->tcp_fd, r->b, (r->bl + 2))) < 0 && errno == EAGAIN);
 
     if (ret == 0) {
-        /* REFACTOR the following three lines should be factored out into a function */
-        close(p->tcp_fd);
-        p->tcp_fd = -1;
-        p->con = DEAD;
-        printf("peer %d got disconnected\n", peer);
+        peer_mark_as_dead(p);
         return 2;
     }
 
@@ -242,9 +196,8 @@ int peer_sendreq(uint peer, int req)
 
 /* Returns -1 on error, returns 1 on something, returns 2 on something, returns 3 on disconnect. */
 /* XXX This function needs a really serious re-write/audit/etc. */
-int peer_readres(uint peer)
+int peer_readres(struct peer_t *p)
 {
-    struct peer_t *p;
     struct request_t *r;
     int ret;
     unsigned short int *ul;
@@ -253,13 +206,6 @@ int peer_readres(uint peer)
     unsigned short int *l;
     int len;
 
-    if (peer > MAX_PEERS)
-    {
-        printf("Something is wrong! peer is larger than MAX_PEERS: %i\n", peer);
-        return -1;
-    }
-
-    p = &peers[peer];
     l = (unsigned short int*)p->b;
 
      /* BUG: we’re reading on a TCP socket here, so we could in theory
@@ -273,10 +219,7 @@ int peer_readres(uint peer)
     while ((ret = read(p->tcp_fd, (p->b + p->bl), (RECV_BUF_SIZE - p->bl))) < 0 && errno == EAGAIN);
 
     if (ret == 0) {
-        close(p->tcp_fd);
-        p->tcp_fd = -1;
-        printf("peer %d got disconnected\n", peer);
-        p->con = DEAD;
+        peer_mark_as_dead(p);
         return 3;
     }
 
@@ -329,15 +272,10 @@ processanswer:
 }
 
 /* Handles outstanding peer requests and does not return anything. */
-void peer_handleoutstanding(uint peer)
+void peer_handleoutstanding(struct peer_t *p)
 {
     int i;
     int ret;
-
-    if (peer > MAX_PEERS)
-    {
-        printf("Something is wrong! peer is larger than MAX_PEERS: %i\n", peer);
-    }
 
     /* QUASIBUG It doesn’t make sense that sometimes `request_add`
         will queue up a request to be sent to nameserver #2 when a
@@ -346,41 +284,46 @@ void peer_handleoutstanding(uint peer)
         opening its connection before nameserver #2. */
 
     for (i = 0; i < MAX_REQUESTS; i++) {
-        if (requests[i].id != 0 && requests[i].active == WAITING) {
-            requests[i].active = SENT;
-            ret = peer_sendreq(peer, i);
+        struct request_t *r = &requests[i];
+        if (r->id != 0 && r->active == WAITING) {
+            ret = peer_sendreq(p, r);
             printf("peer_sendreq returned %d\n", ret);
         }
     }
 }
 
 /* Currently, we only return the 0th peer. Someday we might want more? */
-int peer_select(void)
+/* REFACTOR if we aren't going to round-robin among the peers, we
+   should remove all the complexity having to do with having more than
+   one peer. */
+struct peer_t *peer_select(void)
 {
-    return 0;
+    return &peers[0];
 }
 
 /* Selects a random nameserver from the pool and returns the number. */
-int ns_select(void)
+struct in_addr ns_select(void)
 {
     // This could use a real bit of randomness, I suspect
-    return (rand()>>16) % num_nameservers;
+    return nameservers[(rand()>>16) % num_nameservers];
 }
 
 /* Return 0 for a request that is pending or if all slots are full, otherwise
    return the value of peer_sendreq or peer_connect respectively... */
-int request_add(struct request_t *r) /* I’ve verified that r->id is nonnegative: it comes from ntohs. */
+int request_add(struct request_t *r)
 {
     uint pos = r->id % MAX_REQUESTS; // XXX r->id is unchecked
-    int dst_peer;
+    struct peer_t *dst_peer;
     unsigned short int *ul;
     time_t ct = time(NULL);
+    struct request_t *req_in_table = 0;
 
     printf("adding new request (id=%d)\n", r->id);
     for (;;) {
         if (requests[pos].id == 0) {
             // this one is unused, take it
-            printf("new request added at pos: %d\n", requests[pos].id); /* BUG should be pos, not request[pos].id */
+            printf("new request added at pos: %d\n", pos);
+            req_in_table = &requests[pos];
             break;
         }
         else {
@@ -417,6 +360,7 @@ int request_add(struct request_t *r) /* I’ve verified that r->id is nonnegativ
             }
         }
     }
+    printf("using request slot %d\n", pos); /* REFACTOR: move into loop */
 
     r->timeout = time(NULL); /* REFACTOR not ct? sloppy */
 
@@ -424,15 +368,15 @@ int request_add(struct request_t *r) /* I’ve verified that r->id is nonnegativ
     ul = (unsigned short int*)(r->b + 2);
     *ul = htons(r->id);
 
-    printf("using request slot %d\n", pos);
-    memcpy((char*)&requests[pos], (char*)r, sizeof(struct request_t));
+
+    memcpy((char*)req_in_table, (char*)r, sizeof(*req_in_table));
 
     // XXX: nice feature to have: send request to multiple peers for speedup and reliability
 
     dst_peer = peer_select();
-    if (peers[dst_peer].con == CONNECTED) {
-        r->active = SENT; /* REFACTOR: this should move into peer_sendreq */
-        return peer_sendreq(dst_peer, pos);
+
+    if (dst_peer->con == CONNECTED) {
+        return peer_sendreq(dst_peer, req_in_table);
     }
     else {
         // The request will be sent by peer_handleoutstanding when the
@@ -440,6 +384,19 @@ int request_add(struct request_t *r) /* I’ve verified that r->id is nonnegativ
         // earlier) when *any* connection is established.
         return peer_connect(dst_peer, ns_select());
     }
+}
+
+static void process_incoming_request(struct request_t *tmp) {
+    // get request id
+    unsigned short int *ul = (unsigned short int*) (tmp->b + 2);
+    tmp->rid = tmp->id = ntohs(*ul);
+    // get request length
+    ul = (unsigned short int*)tmp->b;
+    *ul = htons(tmp->bl);
+
+    printf("received request of %d bytes, id = %d\n", tmp->bl, tmp->id);
+
+    request_add(tmp); // This should be checked; we're currently ignoring important returns.
 }
 
 int server(char *bind_ip, int bind_port)
@@ -450,7 +407,6 @@ int server(char *bind_ip, int bind_port)
     int fr;
     int i;
     int pfd_num;
-    struct request_t tmp;
     int r;
 
     for (i = 0; i < MAX_PEERS; i++) {
@@ -533,22 +489,24 @@ int server(char *bind_ip, int bind_port)
             if (pfd[i].fd != -1 && ((pfd[i].revents & POLLIN) == POLLIN || 
                     (pfd[i].revents & POLLPRI) == POLLPRI || (pfd[i].revents & POLLOUT) 
                     == POLLOUT || (pfd[i].revents & POLLERR) == POLLERR)) {
+                uint peer = poll2peers[i-1];
+                struct peer_t *p = &peers[peer];
 
-                switch (peers[poll2peers[i-1]].con) {
+                if (peer > MAX_PEERS) {
+                    printf("Something is wrong! poll2peers[%i] is larger than MAX_PEERS: %i\n", i-1, peer);
+                } else switch (p->con) {
                 case CONNECTED:
-                    peer_readres(poll2peers[i-1]);
+                    peer_readres(p);
                     break;
                 case CONNECTING:
                 case CONNECTING2:
-                    if (peer_connected(poll2peers[i-1])) {
-                        peer_handleoutstanding(poll2peers[i-1]);
+                    if (peer_connected(p)) {
+                        peer_handleoutstanding(p);
                     }
                     break;
                 case DEAD:
-                    printf("peer %d in bad state\n", peers[poll2peers[i-1]].con);
-                    break;
                 default:
-                    printf("peer %d in bad state\n", peers[poll2peers[i-1]].con);
+                    printf("peer %s in bad state %i\n", peer_display(p), p->con);
                     break;
                 }
             }
@@ -556,38 +514,17 @@ int server(char *bind_ip, int bind_port)
 
         // handle port 53
         if ((pfd[0].revents & POLLIN) == POLLIN || (pfd[0].revents & POLLPRI) == POLLPRI) {
-            unsigned short int *ul;
-
+            struct request_t tmp;
             memset((char*)&tmp, 0, sizeof(struct request_t)); // bzero
             tmp.al = sizeof(struct sockaddr_in);
 
-           /* QUASIBUG Okay, suppose hypothetically that
-           the socket somehow polled as readable but
-           then recvfrom failed with -EAGAIN (the
-           packet disappeared from kernel memory
-           somehow?).  This `while` loop is here
-           specifically to handle that case. But what
-           it does in that case is stupid: it hangs
-           the server, preventing it from forwarding
-           any further responses, until another DNS
-           request is received. The `while` loop
-           wrapping the recvfrom call should be
-           removed. */
-
-            while ((tmp.bl = recvfrom(udp_fd, tmp.b+2, 1500, 0, (struct sockaddr*)&tmp.a, &tmp.al)) < 0 && errno == EAGAIN);
-            /* BUG and there should be error handling here
-             for other error conditions like ENOMEM and
-             EINTR, unlikely though those are. */
-            // get request id
-            ul = (unsigned short int*) (tmp.b + 2);
-            tmp.rid = tmp.id = ntohs(*ul);
-            // get request length
-            ul = (unsigned short int*)tmp.b;
-            *ul = htons(tmp.bl);
-
-            printf("received request of %d bytes, id = %d\n", tmp.bl, tmp.id);
-
-            request_add(&tmp); // This should be checked, we're currently ignoring imporant returns
+            tmp.bl = recvfrom(udp_fd, tmp.b+2, RECV_BUF_SIZE-2, 0, 
+                              (struct sockaddr*)&tmp.a, &tmp.al);
+            if (tmp.bl < 0) {
+                perror("recvfrom on UDP fd");
+            } else {
+                process_incoming_request(&tmp);
+            }
         }
     }
 }
@@ -604,7 +541,7 @@ int load_nameservers(char *filename)
         return 0;
     }
     num_nameservers = 0;
-    if (!(nameservers = malloc(sizeof(unsigned long int) * MAX_NAMESERVERS))) {
+    if (!(nameservers = malloc(sizeof(nameservers[0]) * MAX_NAMESERVERS))) {
         fclose(fp);
         return 0;
     }
@@ -617,7 +554,7 @@ int load_nameservers(char *filename)
         if (strstr(line, "127.") == line) continue;
         if (strstr(line, "10.") == line) continue;
         if (inet_pton(AF_INET, line, &ns)) {
-            nameservers[num_nameservers] = ns;
+            nameservers[num_nameservers].s_addr = ns;
             num_nameservers++;
             if (num_nameservers >= MAX_NAMESERVERS) {
                 printf("stopped loading nameservers after first %d\n", MAX_NAMESERVERS);

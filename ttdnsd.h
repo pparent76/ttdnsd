@@ -68,7 +68,7 @@ struct request_t {
     socklen_t al;
     unsigned char b[1502]; /**< request buffer */
     int bl; /**< bytes in request buffer */
-    uint id; /**< dns request id; must be nonnegative */
+    uint id; /**< dns request id */
     int rid; /**< real dns request id */
     REQ_STATE active; /**< 1=sent, 0=waiting for tcp to become connected */
     time_t timeout; /**< timeout of request */
@@ -80,19 +80,19 @@ struct peer_t
     int tcp_fd;
     time_t timeout;
     CON_STATE con; /**< connection state 0=dead, 1=connecting..., 3=connected */
-    unsigned char b[1502]; /**< receive buffer */
+    unsigned char b[RECV_BUF_SIZE]; /**< receive buffer */
     int bl; /**< bytes in receive buffer */ // bl? Why don't we call this bytes_in_recv_buf or something meaningful?
 };
 
 
 int request_find(uint id);
-int peer_connect(uint peer, int ns);
-int peer_connected(uint peer);
-int peer_sendreq(uint peer, int req);
-int peer_readres(uint peer);
-void peer_handleoutstanding(uint peer);
-int peer_select(void);
-int ns_select(void);
+int peer_connect(struct peer_t *p, struct in_addr ns);
+int peer_connected(struct peer_t *p);
+int peer_sendreq(struct peer_t *p, struct request_t *r);
+int peer_readres(struct peer_t *p);
+void peer_handleoutstanding(struct peer_t *p);
+struct peer_t *peer_select(void);
+struct in_addr ns_select(void);
 int request_add(struct request_t *r);
 int server(char *bind_ip, int bind_port);
 int load_nameservers(char *filename);
