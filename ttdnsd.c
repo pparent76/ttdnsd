@@ -27,10 +27,10 @@
 #include "ttdnsd.h"
 
 /*
- *  binary is linked with libtsocks therefore all TCP connections will
- *  be routed over Tor (if tsocks.conf is setup to chain with Tor)
+ *  Binary is linked with libtsocks therefore all TCP connections will
+ *  be routed over Tor (if tsocks.conf is set up to chain with Tor).
  *
- *  see makefile about disableing tsocks (for testing)
+ *  See Makefile about disabling tsocks (for testing).
  *
  */
 
