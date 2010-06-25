@@ -268,7 +268,7 @@ int peer_readres(uint peer)
     if (ret == 0) {
         close(p->tcp_fd);
         p->tcp_fd = -1;
-        printf("peer %d got disconnected\n", peer);
+        printf("peer %s got disconnected\n", inet_ntoa(p->tcp.sin_addr));
         p->con = DEAD;
         return 3;
     }
