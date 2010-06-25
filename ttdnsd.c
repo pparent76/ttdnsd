@@ -91,9 +91,8 @@ int request_find(uint id)
 
 
 /* Returns 1 upon non-blocking connection setup; 0 upon serious error */
-int peer_connect(uint peer, int ns)
+int peer_connect(struct peer_t *p, int ns)
 {
-    struct peer_t *p;
     int socket_opt_val = 1;
     int cs;
 
@@ -117,17 +116,8 @@ int peer_connect(uint peer, int ns)
          program easier to understand and review.
 
     */
-
-    if (peer > MAX_PEERS) // Perhaps we should just assert() and die entirely?
-    {
-        printf("Something is wrong! peer is larger than MAX_PEERS: %i\n", peer);
-        return 0;
-    }
-
-    p = &peers[peer];
-
     if (p->con == CONNECTING || p->con == CONNECTING2) {
-        printf("It appears that peer %d is already CONNECTING\n", peer);
+        printf("It appears that peer %s is already CONNECTING\n", inet_ntoa(p->tcp.sin_addr));
         return 1;
     }
 
@@ -459,7 +449,13 @@ int request_add(struct request_t *r) /* I’ve verified that r->id is nonnegativ
         // The request will be sent by peer_handleoutstanding when the
         // connection is established. Actually (see QUASIBUG notice
         // earlier) when *any* connection is established.
-        return peer_connect(dst_peer, ns_select());
+
+        if (dst_peer > MAX_PEERS) { // Perhaps we should just assert() and die entirely?
+            printf("Something is wrong! peer is larger than MAX_PEERS: %i\n", dst_peer);
+            return 0;
+        }
+
+        return peer_connect(&peers[dst_peer], ns_select());
     }
 }
 
