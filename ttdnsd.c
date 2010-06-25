@@ -176,6 +176,7 @@ static void peer_mark_as_dead(struct peer_t *p)
 int peer_sendreq(struct peer_t *p, struct request_t *r)
 {
     int ret;
+    r->active = SENT;        /* BUG: even if the write below fails? */
 
      /* QUASIBUG Busy-waiting on the network buffer to free up some
         space is not acceptable; at best, it wastes CPU; at worst, it
@@ -285,7 +286,6 @@ void peer_handleoutstanding(struct peer_t *p)
     for (i = 0; i < MAX_REQUESTS; i++) {
         struct request_t *r = &requests[i];
         if (r->id != 0 && r->active == WAITING) {
-            r->active = SENT;
             ret = peer_sendreq(p, r);
             printf("peer_sendreq returned %d\n", ret);
         }
@@ -376,7 +376,6 @@ int request_add(struct request_t *r)
     dst_peer = peer_select();
 
     if (dst_peer->con == CONNECTED) {
-        r->active = SENT; /* REFACTOR: this should move into peer_sendreq */
         return peer_sendreq(dst_peer, req_in_table);
     }
     else {
