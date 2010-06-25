@@ -90,6 +90,13 @@ int request_find(uint id)
 }
 
 
+/* Returns a display name for the peer; currently inet_ntoa, so
+   statically allocated */
+static const char *peer_display(struct peer_t *p) 
+{
+    return inet_ntoa(p->tcp.sin_addr);
+}
+
 /* Returns 1 upon non-blocking connection setup; 0 upon serious error */
 int peer_connect(struct peer_t *p, int ns)
 {
@@ -117,7 +124,7 @@ int peer_connect(struct peer_t *p, int ns)
 
     */
     if (p->con == CONNECTING || p->con == CONNECTING2) {
-        printf("It appears that peer %s is already CONNECTING\n", inet_ntoa(p->tcp.sin_addr));
+        printf("It appears that peer %s is already CONNECTING\n", peer_display(p));
         return 1;
     }
 
@@ -140,7 +147,7 @@ int peer_connect(struct peer_t *p, int ns)
 
     p->tcp.sin_addr.s_addr = nameservers[ns];
 
-    printf("connecting to %s on port %i\n", inet_ntoa(p->tcp.sin_addr), ntohs(p->tcp.sin_port));
+    printf("connecting to %s on port %i\n", peer_display(p), ntohs(p->tcp.sin_port));
     cs = connect(p->tcp_fd, (struct sockaddr*)&p->tcp, sizeof(struct sockaddr_in));
 
     /* BUG This will print spurious error messages, because it should
@@ -225,7 +232,7 @@ int peer_sendreq(struct peer_t *p, int req)
         close(p->tcp_fd);
         p->tcp_fd = -1;
         p->con = DEAD;
-        printf("peer %s got disconnected\n", inet_ntoa(p->tcp.sin_addr));
+        printf("peer %s got disconnected\n", peer_display(p));
         return 2;
     }
 
@@ -268,7 +275,7 @@ int peer_readres(uint peer)
     if (ret == 0) {
         close(p->tcp_fd);
         p->tcp_fd = -1;
-        printf("peer %s got disconnected\n", inet_ntoa(p->tcp.sin_addr));
+        printf("peer %s got disconnected\n", peer_display(p));
         p->con = DEAD;
         return 3;
     }
