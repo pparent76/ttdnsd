@@ -554,8 +554,6 @@ int server(char *bind_ip, int bind_port)
                     }
                     break;
                 case DEAD:
-                    printf("peer %d in bad state\n", p->con); /* BUG */
-                    break;
                 default:
                     printf("peer %d in bad state\n", p->con); /* BUG */
                     break;
