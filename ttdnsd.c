@@ -542,7 +542,7 @@ int server(char *bind_ip, int bind_port)
            wrapping the recvfrom call should be
            removed. */
 
-            while ((tmp.bl = recvfrom(udp_fd, tmp.b+2, 1500, 0, (struct sockaddr*)&tmp.a, &tmp.al)) < 0 && errno == EAGAIN);
+            while ((tmp.bl = recvfrom(udp_fd, tmp.b+2, RECV_BUF_SIZE-2, 0, (struct sockaddr*)&tmp.a, &tmp.al)) < 0 && errno == EAGAIN);
             /* BUG and there should be error handling here
              for other error conditions like ENOMEM and
              EINTR, unlikely though those are. */

@@ -80,7 +80,7 @@ struct peer_t
     int tcp_fd;
     time_t timeout;
     CON_STATE con; /**< connection state 0=dead, 1=connecting..., 3=connected */
-    unsigned char b[1502]; /**< receive buffer */
+    unsigned char b[RECV_BUF_SIZE]; /**< receive buffer */
     int bl; /**< bytes in receive buffer */ // bl? Why don't we call this bytes_in_recv_buf or something meaningful?
 };
 
