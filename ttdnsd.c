@@ -210,25 +210,17 @@ int peer_keepalive(uint peer)
 */
 
 /* Returns 1 upon sent request; 0 upon serious error and 2 upon disconnect */
-int peer_sendreq(uint peer, int req)
+int peer_sendreq(struct peer_t *p, int req)
 {
-    struct peer_t *p;
     struct request_t *r;
     int ret;
 
-    if (peer > MAX_PEERS)
-    {
-        printf("Something is wrong! peer is larger than MAX_PEERS: %i\n", peer);
-        return 0;
-    }
-
     if (req > MAX_REQUESTS)
     {
-        printf("Something is wrong! peer is larger than MAX_PEERS: %i\n", peer);
+        printf("Something is wrong! req is larger than MAX_REQUESTS: %i\n", req);
         return 0;
     }
 
-    p = &peers[peer];
     r = &requests[req];
 
      /* QUASIBUG Busy-waiting on the network buffer to free up some
@@ -243,7 +235,7 @@ int peer_sendreq(uint peer, int req)
         close(p->tcp_fd);
         p->tcp_fd = -1;
         p->con = DEAD;
-        printf("peer %d got disconnected\n", peer);
+        printf("peer %s got disconnected\n", inet_ntoa(p->tcp.sin_addr));
         return 2;
     }
 
@@ -359,7 +351,7 @@ void peer_handleoutstanding(uint peer)
     for (i = 0; i < MAX_REQUESTS; i++) {
         if (requests[i].id != 0 && requests[i].active == WAITING) {
             requests[i].active = SENT;
-            ret = peer_sendreq(peer, i);
+            ret = peer_sendreq(&peers[peer], i);
             printf("peer_sendreq returned %d\n", ret);
         }
     }
@@ -441,20 +433,20 @@ int request_add(struct request_t *r) /* I’ve verified that r->id is nonnegativ
     // XXX: nice feature to have: send request to multiple peers for speedup and reliability
 
     dst_peer = peer_select();
+
+    if (dst_peer > MAX_PEERS) { // Perhaps we should just assert() and die entirely?
+        printf("Something is wrong! peer is larger than MAX_PEERS: %i\n", dst_peer);
+        return 0;
+    }
+
     if (peers[dst_peer].con == CONNECTED) {
         r->active = SENT; /* REFACTOR: this should move into peer_sendreq */
-        return peer_sendreq(dst_peer, pos);
+        return peer_sendreq(&peers[dst_peer], pos);
     }
     else {
         // The request will be sent by peer_handleoutstanding when the
         // connection is established. Actually (see QUASIBUG notice
         // earlier) when *any* connection is established.
-
-        if (dst_peer > MAX_PEERS) { // Perhaps we should just assert() and die entirely?
-            printf("Something is wrong! peer is larger than MAX_PEERS: %i\n", dst_peer);
-            return 0;
-        }
-
         return peer_connect(&peers[dst_peer], ns_select());
     }
 }

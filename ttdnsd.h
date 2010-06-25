@@ -88,7 +88,7 @@ struct peer_t
 int request_find(uint id);
 int peer_connect(struct peer_t *p, int ns);
 int peer_connected(uint peer);
-int peer_sendreq(uint peer, int req);
+int peer_sendreq(struct peer_t *p, int req);
 int peer_readres(uint peer);
 void peer_handleoutstanding(uint peer);
 int peer_select(void);
