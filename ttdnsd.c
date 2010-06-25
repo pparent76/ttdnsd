@@ -34,7 +34,7 @@
  *
  */
 
-static unsigned long int *nameservers; /**< nameservers pool */
+static struct in_addr *nameservers; /**< nameservers pool */
 static unsigned int num_nameservers; /**< number of nameservers */
 
 static struct peer_t peers[MAX_PEERS]; /**< TCP peers */
@@ -98,7 +98,7 @@ static const char *peer_display(struct peer_t *p)
 }
 
 /* Returns 1 upon non-blocking connection setup; 0 upon serious error */
-int peer_connect(struct peer_t *p, int ns)
+int peer_connect(struct peer_t *p, struct in_addr ns)
 {
     int socket_opt_val = 1;
     int cs;
@@ -145,7 +145,7 @@ int peer_connect(struct peer_t *p, int ns)
     // This should not be hardcoded to a magic number; per ns port data structure changes required
     p->tcp.sin_port = htons(53);
 
-    p->tcp.sin_addr.s_addr = nameservers[ns];
+    p->tcp.sin_addr = ns;
 
     printf("connecting to %s on port %i\n", peer_display(p), ntohs(p->tcp.sin_port));
     cs = connect(p->tcp_fd, (struct sockaddr*)&p->tcp, sizeof(struct sockaddr_in));
@@ -351,10 +351,10 @@ struct peer_t *peer_select(void)
 }
 
 /* Selects a random nameserver from the pool and returns the number. */
-int ns_select(void)
+struct in_addr ns_select(void)
 {
     // This could use a real bit of randomness, I suspect
-    return (rand()>>16) % num_nameservers;
+    return nameservers[(rand()>>16) % num_nameservers];
 }
 
 /* Return 0 for a request that is pending or if all slots are full, otherwise
@@ -597,7 +597,7 @@ int load_nameservers(char *filename)
         return 0;
     }
     num_nameservers = 0;
-    if (!(nameservers = malloc(sizeof(unsigned long int) * MAX_NAMESERVERS))) {
+    if (!(nameservers = malloc(sizeof(nameservers[0]) * MAX_NAMESERVERS))) {
         fclose(fp);
         return 0;
     }
@@ -610,7 +610,7 @@ int load_nameservers(char *filename)
         if (strstr(line, "127.") == line) continue;
         if (strstr(line, "10.") == line) continue;
         if (inet_pton(AF_INET, line, &ns)) {
-            nameservers[num_nameservers] = ns;
+            nameservers[num_nameservers].s_addr = ns;
             num_nameservers++;
             if (num_nameservers >= MAX_NAMESERVERS) {
                 printf("stopped loading nameservers after first %d\n", MAX_NAMESERVERS);

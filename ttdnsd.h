@@ -86,13 +86,13 @@ struct peer_t
 
 
 int request_find(uint id);
-int peer_connect(struct peer_t *p, int ns);
+int peer_connect(struct peer_t *p, struct in_addr ns);
 int peer_connected(struct peer_t *p);
 int peer_sendreq(struct peer_t *p, int req);
 int peer_readres(struct peer_t *p);
 void peer_handleoutstanding(struct peer_t *p);
 struct peer_t *peer_select(void);
-int ns_select(void);
+struct in_addr ns_select(void);
 int request_add(struct request_t *r);
 int server(char *bind_ip, int bind_port);
 int load_nameservers(char *filename);
