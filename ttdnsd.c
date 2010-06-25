@@ -207,18 +207,9 @@ int peer_keepalive(uint peer)
 */
 
 /* Returns 1 upon sent request; 0 upon serious error and 2 upon disconnect */
-int peer_sendreq(struct peer_t *p, int req)
+int peer_sendreq(struct peer_t *p, struct request_t *r)
 {
-    struct request_t *r;
     int ret;
-
-    if (req > MAX_REQUESTS)
-    {
-        printf("Something is wrong! req is larger than MAX_REQUESTS: %i\n", req);
-        return 0;
-    }
-
-    r = &requests[req];
 
      /* QUASIBUG Busy-waiting on the network buffer to free up some
         space is not acceptable; at best, it wastes CPU; at worst, it
@@ -333,9 +324,10 @@ void peer_handleoutstanding(struct peer_t *p)
         opening its connection before nameserver #2. */
 
     for (i = 0; i < MAX_REQUESTS; i++) {
-        if (requests[i].id != 0 && requests[i].active == WAITING) {
-            requests[i].active = SENT;
-            ret = peer_sendreq(p, i);
+        struct request_t *r = &requests[i];
+        if (r->id != 0 && r->active == WAITING) {
+            r->active = SENT;
+            ret = peer_sendreq(p, r);
             printf("peer_sendreq returned %d\n", ret);
         }
     }
@@ -365,12 +357,14 @@ int request_add(struct request_t *r)
     struct peer_t *dst_peer;
     unsigned short int *ul;
     time_t ct = time(NULL);
+    struct request_t *req_in_table = 0;
 
     printf("adding new request (id=%d)\n", r->id);
     for (;;) {
         if (requests[pos].id == 0) {
             // this one is unused, take it
             printf("new request added at pos: %d\n", requests[pos].id); /* BUG should be pos, not request[pos].id */
+            req_in_table = &requests[pos];
             break;
         }
         else {
@@ -414,8 +408,9 @@ int request_add(struct request_t *r)
     ul = (unsigned short int*)(r->b + 2);
     *ul = htons(r->id);
 
-    printf("using request slot %d\n", pos);
-    memcpy((char*)&requests[pos], (char*)r, sizeof(struct request_t));
+
+    printf("using request slot %d\n", pos); /* REFACTOR: move into loop */
+    memcpy((char*)req_in_table, (char*)r, sizeof(*req_in_table));
 
     // XXX: nice feature to have: send request to multiple peers for speedup and reliability
 
@@ -423,7 +418,7 @@ int request_add(struct request_t *r)
 
     if (dst_peer->con == CONNECTED) {
         r->active = SENT; /* REFACTOR: this should move into peer_sendreq */
-        return peer_sendreq(dst_peer, pos);
+        return peer_sendreq(dst_peer, req_in_table);
     }
     else {
         // The request will be sent by peer_handleoutstanding when the
