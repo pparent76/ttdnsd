@@ -359,7 +359,7 @@ struct in_addr ns_select(void)
 
 /* Return 0 for a request that is pending or if all slots are full, otherwise
    return the value of peer_sendreq or peer_connect respectively... */
-int request_add(struct request_t *r) /* I’ve verified that r->id is nonnegative: it comes from ntohs. */
+int request_add(struct request_t *r)
 {
     uint pos = r->id % MAX_REQUESTS; // XXX r->id is unchecked
     struct peer_t *dst_peer;

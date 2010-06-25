@@ -68,7 +68,7 @@ struct request_t {
     socklen_t al;
     unsigned char b[1502]; /**< request buffer */
     int bl; /**< bytes in request buffer */
-    uint id; /**< dns request id; must be nonnegative */
+    uint id; /**< dns request id */
     int rid; /**< real dns request id */
     REQ_STATE active; /**< 1=sent, 0=waiting for tcp to become connected */
     time_t timeout; /**< timeout of request */
