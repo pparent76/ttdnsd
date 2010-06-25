@@ -528,7 +528,7 @@ int server(char *bind_ip, int bind_port)
                 struct peer_t *p = &peers[peer];
 
                 if (peer > MAX_PEERS) {
-                    printf("Something is wrong! peer is larger than MAX_PEERS: %i\n", peer);
+                    printf("Something is wrong! poll2peers[%i] is larger than MAX_PEERS: %i\n", i-1, peer);
                 } else switch (p->con) {
                 case CONNECTED:
                     peer_readres(p);
