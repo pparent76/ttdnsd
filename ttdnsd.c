@@ -242,9 +242,8 @@ int peer_sendreq(struct peer_t *p, int req)
 
 /* Returns -1 on error, returns 1 on something, returns 2 on something, returns 3 on disconnect. */
 /* XXX This function needs a really serious re-write/audit/etc. */
-int peer_readres(uint peer)
+int peer_readres(struct peer_t *p)
 {
-    struct peer_t *p;
     struct request_t *r;
     int ret;
     unsigned short int *ul;
@@ -253,13 +252,6 @@ int peer_readres(uint peer)
     unsigned short int *l;
     int len;
 
-    if (peer > MAX_PEERS)
-    {
-        printf("Something is wrong! peer is larger than MAX_PEERS: %i\n", peer);
-        return -1;
-    }
-
-    p = &peers[peer];
     l = (unsigned short int*)p->b;
 
      /* BUG: we’re reading on a TCP socket here, so we could in theory
@@ -535,15 +527,15 @@ int server(char *bind_ip, int bind_port)
                 uint peer = poll2peers[i-1];
                 struct peer_t *p = &peers[peer];
 
-                switch (p->con) {
+                if (peer > MAX_PEERS) {
+                    printf("Something is wrong! peer is larger than MAX_PEERS: %i\n", peer);
+                } else switch (p->con) {
                 case CONNECTED:
-                    peer_readres(peer);
+                    peer_readres(p);
                     break;
                 case CONNECTING:
                 case CONNECTING2:
-                    if (peer > MAX_PEERS) {
-                        printf("Something is wrong! peer is larger than MAX_PEERS: %i\n", peer);
-                    } else if (peer_connected(p)) {
+                    if (peer_connected(p)) {
                         peer_handleoutstanding(p);
                     }
                     break;
