@@ -97,3 +97,5 @@ demo-tests: demo
 	dig @127.0.0.1 -t NS torproject.org
 	dig @127.0.0.1 -t MX torproject.org
 	dig @127.0.0.1 -t CNAME svn.freehaven.net
+	dig @127.0.0.1 -t srv _xmpp-client._tcp.google.com
+	dig @127.0.0.1 -t aaaa www.kame.net
