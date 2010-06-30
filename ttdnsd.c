@@ -183,6 +183,7 @@ int peer_sendreq(struct peer_t *p, struct request_t *r)
         hangs the daemon until the TCP timeout informs it that its
         connection to Tor has timed out. (Although that’s an unlikely
         failure mode.) */
+    /* BUG: what if write() doesn't write all the data? */
     while ((ret = write(p->tcp_fd, r->b, (r->bl + 2))) < 0 && errno == EAGAIN);
 
     if (ret == 0) {
@@ -546,10 +547,10 @@ int load_nameservers(char *filename)
         return 0;
     }
 
-    if (!fp) return 0;
+    if (!fp) return 0;                       /* QUASIBUG can’t happen */
     while (fgets(line, MAX_LINE_SIZE, fp)) { // properly terminate line
         if (line[0] == '#' || line[0] == '\n' || line[0] == ' ') continue;
-        line[strlen(line)-1] = 0; // This is a tautology - do not compute, know the end
+        line[strlen(line)-1] = 0; // This is a tautology - do not compute, know the end. BUG BUFFER UNDERFLOW. Also what if there's no \n?
         if (strstr(line, "192.168.") == line) continue;
         if (strstr(line, "127.") == line) continue;
         if (strstr(line, "10.") == line) continue;
