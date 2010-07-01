@@ -559,12 +559,13 @@ int load_nameservers(char *filename)
         if (strstr(line, "127.") == line) continue;
         if (strstr(line, "10.") == line) continue;
         if (inet_pton(AF_INET, line, &ns)) {
-            nameservers[num_nameservers].s_addr = ns;
-            num_nameservers++;
             if (num_nameservers >= MAX_NAMESERVERS) {
-                printf("stopped loading nameservers after first %d\n", MAX_NAMESERVERS);
+                printf("We've loaded %d nameservers; this is our maximum\n", num_nameservers);
                 break;
             }
+            nameservers[num_nameservers].s_addr = ns;
+            num_nameservers++;
+            printf("We've loaded %s as a nameserver.\n", line);
         }
         else {
             printf("%s: is not a valid IPv4 address\n", line);
