@@ -5,6 +5,7 @@
  *  Copyright (c) 2010, The Tor Project, Inc.
  *
  *  http://www.mulliner.org/collin/ttdnsd.php
+ *  https://www.torproject.org/ttdnsd/
  *
  */
 
