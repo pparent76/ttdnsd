@@ -1,3 +1,5 @@
+TTDNSDVERSION= 0.4
+GPGKEYID=E012B42D
 EXEC = ttdnsd
 CC = /usr/bin/gcc
 CHROOT = /var/run/ttdnsd/
@@ -88,6 +90,19 @@ deb:
 deb-clean:
 	-rm build
 	debian/rules clean
+
+src-tar-gz: clean
+	cd .. && mv ttdnsd ttdnsd-$(TTDNSDVERSION) && \
+    tar --owner=nobody --group=nogroup -cvzf \
+    ttdnsd-$(TTDNSDVERSION).tar.gz ttdnsd-$(TTDNSDVERSION) && mv \
+    ttdnsd-$(TTDNSDVERSION) ttdnsd
+
+signed-src: src-tar-gz
+	gpg -u $(GPGKEYID) --use-agent -ab ../ttdnsd-$(TTDNSDVERSION).tar.gz
+
+git-tag:
+	git tag -u $(GPGKEYID) ttdnsd-$(TTDNSDVERSION)
+	git push origin tag ttdnsd-$(TTDNSDVERSION)
 
 # These all work; you've broken something if these fail
 demo-tests: demo
