@@ -6,8 +6,9 @@ For 0.5 or later:
     make it simple to bump the version number for ttdnsd during release time
         currently, a release requires editing many files:
         Makefile, debian/control, debian/changelog, ttdnsd.h, package/ttdnsd/Makefile
+    Make nice little website in the Tor wml format and publish it
 
-For 0.5 or later:
+Certainly 0.5 but probably much later:
 
     re-write ttdnsd to use libevent
 
