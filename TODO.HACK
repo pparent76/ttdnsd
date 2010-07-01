@@ -11,4 +11,5 @@ For 0.5 or later:
 Certainly 0.5 but probably much later:
 
     re-write ttdnsd to use libevent
+    Make supported DNS queries via Tor's SOCKS resolve method
 
