@@ -4,9 +4,10 @@
  *  Copyright (c) Collin R. Mulliner <collin(AT)mulliner.org>
  *  Copyright (c) 2010, The Tor Project, Inc.
  *
- *  http://www.mulliner.org/collin/ttdnsd.php
- *
  */
+
+// Update this version upon release
+#define TTDNSD_VERSION "0.4"
 
 #define DEBUG 0
 
@@ -39,7 +40,7 @@
 #define DEFAULT_PID_FILE DEFAULT_CHROOT"/ttdnsd.pid"
 
 #define HELP_STR ""\
-    "syntax: ttdnsd [bpfPCcdl]\n"\
+    "syntax: ttdnsd [bpfPCcdlhV]\n"\
     "\t-b\t<local ip>\tlocal IP to bind to\n"\
     "\t-p\t<local port>\tbind to port\n"\
     "\t-f\t<resolvers>\tfilename to read resolver IP(s) from\n"\
@@ -47,7 +48,9 @@
     "\t-C\t<chroot dir>\tchroot(2) to <chroot dir>\n"\
     "\t-c\t\t\tDON'T chroot(2) to /var/run/ttdnsd\n"\
     "\t-d\t\t\tDEBUG (don't fork and print debug)\n"\
-    "\t-l\t\t\twrite debug log to: " DEFAULT_LOG "\n\n"\
+    "\t-l\t\t\twrite debug log to: " DEFAULT_LOG "\n"\
+    "\t-h\t\t\tprint this helpful text and exit\n"\
+    "\t-V\t\t\tprint version and exit\n\n"\
     "export TSOCKS_CONF_FILE to point to config file inside the chroot\n"\
     "\n"
 

@@ -595,7 +595,7 @@ int main(int argc, char **argv)
     FILE *pf;
     int r;
 
-    while ((opt = getopt(argc, argv, "lhdcC:b:f:p:P:")) != EOF) {
+    while ((opt = getopt(argc, argv, "VlhdcC:b:f:p:P:")) != EOF) {
         switch (opt) {
         // log debug to file
         case 'l':
@@ -630,6 +630,10 @@ int main(int argc, char **argv)
         case 'P':
             strncpy(pid_file, optarg, sizeof(pid_file)-1);
             break;
+        // print version and exit
+        case 'V':
+            printf("ttdnsd version %s\n", TTDNSD_VERSION);
+            exit(0);
         // help
         case 'h':
         default:
