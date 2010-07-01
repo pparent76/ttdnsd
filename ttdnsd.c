@@ -555,6 +555,7 @@ int load_nameservers(char *filename)
             *eolp = 0;
         }
         if (strstr(line, "192.168.") == line) continue;
+        if (strstr(line, "172.16.") == line) continue;
         if (strstr(line, "127.") == line) continue;
         if (strstr(line, "10.") == line) continue;
         if (inet_pton(AF_INET, line, &ns)) {
