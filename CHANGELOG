@@ -1,9 +1,9 @@
-v0.4 XXX
+v0.4 Jul. 1. 2010
  - added gcc hardening stuff
  - enabled lots of gcc warnings
  - clean up of various texts
  - ensured build no longer has any warnings at compile time
- - now with a man page
+ - now with a man page 'ttdnsd.1'
  - run time user selected chroot path
  - small Makefile demo for running after build
     - make demo
@@ -13,6 +13,8 @@ v0.4 XXX
     - make deb || make deb-src
  - added DNS tests to Makefile
     - make demo-tests
+ - new release related targets in the Makefile
+    - make src-tar-gz || make signed-src || make git-tag
  - major refactoring of every function
     - lots of bounds checking!
     - prefer to use unsigned ints over ints whenever possible
