@@ -535,6 +535,7 @@ int load_nameservers(char *filename)
     FILE *fp;
     char line[MAX_LINE_SIZE] = {0};
     unsigned long int ns;
+    char *eolp;
 
 
     if (!(fp = fopen(filename, "r"))) {
@@ -548,9 +549,11 @@ int load_nameservers(char *filename)
     }
 
     if (!fp) return 0;                       /* QUASIBUG can’t happen */
-    while (fgets(line, MAX_LINE_SIZE, fp)) { // properly terminate line
+    while (fgets(line, MAX_LINE_SIZE, fp)) {
         if (line[0] == '#' || line[0] == '\n' || line[0] == ' ') continue;
-        line[strlen(line)-1] = 0; // This is a tautology - do not compute, know the end. BUG BUFFER UNDERFLOW. Also what if there's no \n?
+        if ((eolp = strrchr(line, '\n')) != NULL){
+            *eolp = 0;
+        }
         if (strstr(line, "192.168.") == line) continue;
         if (strstr(line, "127.") == line) continue;
         if (strstr(line, "10.") == line) continue;
