@@ -9,7 +9,6 @@ TORTSOCKSCONF = tor-tsocks.conf
 MANPAGE = ttdnsd.1
 INITSCRIPT = ttdnsd.init
 TSOCKSLIB = tsocks
-OPENSSLLIB = ssl
 # If the program ever grows, we'll enjoy this macro:
 SRCFILES := $(wildcard *.c)
 OBJFILES := $(patsubst %.c,%.o,$(wildcard *.c))
@@ -36,7 +35,7 @@ CFLAGS=-g -O2 $(EXTRA_CFLAGS) $(GCCHARDENING) $(GCCWARNINGS) -Werror
 LDFLAGS= $(LDHARDENING)
 
 all: $(SRCFILES)
-	$(CC) $(CFLAGS) $(SRCFILES) -o $(EXEC) -l$(TSOCKSLIB) -l$(OPENSSLLIB) -L$(STAGING_DIR)/usr/lib
+	$(CC) $(CFLAGS) $(SRCFILES) -o $(EXEC) -l$(TSOCKSLIB) -L$(STAGING_DIR)/usr/lib
 
 notsocks:	
 	$(CC) $(CFLAGS) $(SRCFILES) -o $(EXEC) -L$(STAGING_DIR)/usr/lib

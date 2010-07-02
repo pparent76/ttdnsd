@@ -6,10 +6,6 @@ You also need the tsocks library:
 
     http://tsocks.sourceforge.net/
 
-You also need OpenSSL:
-
-    http://openssl.org/
-
 In the future, it may be possible to use the Torsocks library:
 
     http://code.google.com/p/torsocks/
