@@ -102,8 +102,7 @@ signed-src: src-tar-gz
 
 git-tag:
 	git tag -u $(GPGKEYID) ttdnsd-$(TTDNSDVERSION)
-	git push tag ttdnsd-$(TTDNSDVERSION)
-	git push public
+	git push ttdnsd-$(TTDNSDVERSION)
 
 # These all work; you've broken something if these fail
 demo-dns-tests: demo
