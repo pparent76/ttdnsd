@@ -24,12 +24,12 @@ read about ttdnsd. Everyone else should read this email in its entirety.
 You should have a basic understanding of how Tor works and you should
 have a working Tor installation. You can download Tor in a few ways:
 
-	https://www.torproject.org/finding-tor
+    https://www.torproject.org/finding-tor
 
 It is probably possible and the most straight forward to download it
 from our website directly:
 
-	https://www.torproject.org/download.html
+    https://www.torproject.org/download.html
 
 If you can't directly reach our website, send an email to
 gettor@torproject.org - our email robot will send you binaries and/or
@@ -37,10 +37,14 @@ source code.
 
 Feel free to drop by our (SSL/TLS enabled on port 6697) IRC channel:
 
-	irc://irc.oftc.net in channel #tor
+    irc://irc.oftc.net in channel #tor
 
 If you need additional help, feel free to send an email to
 tor-assistants@torproject.org and we'll help you get Tor running!
+
+======================= DNS Leaks and You ==============================
+
+Tor users generally want to rem
 
 =========================== Tor clients ================================
 
@@ -116,7 +120,7 @@ sending a request before deciding that a reply will never come.
 It is possible to check the total number of cached DNS responses for a
 Tor relay by sending the SIGUSR1 signal to a Tor relay:
 
-	kill -SIGUSR1 30521
+    kill -SIGUSR1 30521
 
 Tor will send notice level log events with the number of currently
 cached responses:
@@ -393,16 +397,16 @@ with a third party?
 If you have our Debian package repository added to your sources.list
 file, installing ttdnsd is as easy as:
 
-	apt-get update
-	apt-get install ttdnsd
+    apt-get update
+    apt-get install ttdnsd
 
 You'll should have a Tor running and then you should run ttdnsd:
 
-	/etc/init.d/ttdnsd start
+    /etc/init.d/ttdnsd start
 
 If you'd like ttdnsd to start on boot, add it to the right rc.d locations:
 
-	update-rc.d -f ttdnsd defaults
+    update-rc.d -f ttdnsd defaults
 
 ====================== ttdnsd git Repositories =========================
 
@@ -416,13 +420,13 @@ https://gitweb.torproject.org/ttdnsd.git
 
 If you're git adverse, I've also made a (signed) tar.gz:
 
-	http://crypto.nsa.org/tor/ttdnsd-0.5.tar.gz
-	http://crypto.nsa.org/tor/ttdnsd-0.5.tar.gz.asc
+    http://crypto.nsa.org/tor/ttdnsd-0.5.tar.gz
+    http://crypto.nsa.org/tor/ttdnsd-0.5.tar.gz.asc
 
 Fetch the tar.gz file and the signature:
 
-	cd /tmp
-	wget http://crypto.nsa.org/tor/ttdnsd-0.5.tar.gz{,.asc}
+    cd /tmp
+    wget http://crypto.nsa.org/tor/ttdnsd-0.5.tar.gz{,.asc}
 
 ===================== Verifying GPG Signatures =========================
 
@@ -453,17 +457,17 @@ step, don't skip this one!
 
 Next, you'll want to unpack the source code:
 
-	tar -xvzf ttdnsd-0.5.tar.gz
+    tar -xvzf ttdnsd-0.5.tar.gz
 
 You'll need nothing more than what is required to build Tor. Compile it
 with make:
 
-	cd ttdnsd-0.5
-	make
+    cd ttdnsd-0.5
+    make
 
 If you'd like to install it directly, you can use the 'install' make target:
 
-	make install
+    make install
 
 We also provide targets for building a Debian package ('deb'), tests to
 ensure that your build works ('demo-tests'), and other useful things for
@@ -474,7 +478,7 @@ release engineering. Read the Makefile for more information.
 Using ttdnsd is quite straight forward. First, you'll want to run it by
 starting it with the init.d script:
 
-	/etc/init.d/ttdnsd start
+    /etc/init.d/ttdnsd start
 
 You should see that it is running:
 
@@ -498,7 +502,7 @@ system will resolve things through ttdnsd.
 
 A basic example is as follows:
 
-	dig @127.0.0.1 -t mx gmail.com
+    dig @127.0.0.1 -t mx gmail.com
 
 You should see something like the following:
 
