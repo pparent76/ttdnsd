@@ -7,6 +7,8 @@ For 0.5 or later:
         currently, a release requires editing many files:
         Makefile, debian/control, debian/changelog, ttdnsd.h, package/ttdnsd/Makefile
     Make nice little website in the Tor wml format and publish it
+    Add bind configuration file that only forwards to ttdnsd
+    Add unbound configuration file that only forwards to ttdnsd
 
 Certainly 0.5 but probably much later:
 
