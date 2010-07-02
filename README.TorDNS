@@ -288,6 +288,15 @@ to perform resolution.
 The SOCKS commands mentioned above are satisfied by the Tor client and
 the relevant resolution may occur at the edge of the Tor network.
 
+It would be fair to say that Tor clients resolve DNS requests by sending them
+over circuits. The two DNS request types may be satisfied by almost all modern
+Tor exit nodes that allows connections to the general internet.
+
+However, it is worth noting that Tor does not send complete DNS requests. It
+only sends host names.  The process of resolving those host names is somewhat
+obtuse. In many cases, a connection is opened and the connecting client never
+needs to learn the address.
+
 Section 6.2 of the tor-spec.txt[FOOTNOTE] outlines the method for
 connecting to a specific host by name. Specifically, the Tor client
 creates a RELAY_BEGIN cell that includes the DNS host name. This is
@@ -303,12 +312,9 @@ Currently there is no IPv6 resolution supported by any version of Tor
 but it's nice that the protocol is Real World compatible without too
 much tinkering. If the query fails, the Exit node will reply with a
 RELAY_END cell and the user is left without her DNS requests being
-answered. There are many reasons that this may happen and the user no
-reasonable ability to inspect the actual DNS response.
-
-Tor clients resolve DNS requests by sending them over circuits. The two
-DNS request types may be satisfied by almost all modern Tor exit nodes
-that allows connections to the general internet.
+answered. Obviously, any connection attempted will have failed by this point.
+There are many reasons that this may happen and the user no reasonable ability
+to inspect the actual DNS response.
 
 ===================== Related DNS-like Stuff ===========================
 
