@@ -102,7 +102,7 @@ signed-src: src-tar-gz
 
 git-tag:
 	git tag -u $(GPGKEYID) ttdnsd-$(TTDNSDVERSION)
-	git push origin tag ttdnsd-$(TTDNSDVERSION)
+	git push tag ttdnsd-$(TTDNSDVERSION)
 
 # These all work; you've broken something if these fail
 demo-tests: demo
