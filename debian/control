@@ -2,22 +2,24 @@ Source: ttdnsd
 Priority: extra
 Section: comm
 Maintainer: Jacob Appelbaum <jacob@torproject.org>
+Build-Depends: debhelper (>= 5), libssl-dev (>= 0.9.8k-6)
 Standards-Version: 3.8.4.0
+Homepage: https://www.torproject.org/ttdnsd/
 
 Package: ttdnsd
 Architecture: any
 Depends: ${shlibs:Depends}, tor
-Description: The Tor TCP DNS Daemon
- ttdnsd(1) is a small UDP to TCP DNS shim for use with the tor(1) SOCKS proxy
+Description: Tor TCP DNS Daemon
+ ttdnsd is a small UDP to TCP DNS shim for use with the Tor SOCKS proxy
  interface. It should also work with other SOCKS proxies.
  .
- ttdnsd(1)  requires  a  single  recursive  DNS  listener  on the open
+ ttdnsd requires  a  single  recursive  DNS  listener  on the open
  internet to be useful. It provides no DNS caching support and may be
- chained with unbound(1) or another DNS caching program for performance
- reasons. By default ttdnsd(1) ships with 8.8.8.8 as the open TCP DNS
+ chained with unbound or another DNS caching program for performance
+ reasons. By default ttdnsd ships with 8.8.8.8 as the open TCP DNS
  resolver.
  .
- ttdnsd(1) creates a TCP connection through the configured
+ ttdnsd creates a TCP connection through the configured
  SOCKS proxy to the randomly chosen DNS resolver(s) as
  configured in /etc/ttdns.conf  ;  the  connection  is
  held  open for a reasonable amount of time and
