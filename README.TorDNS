@@ -1,3 +1,24 @@
+============================ Abstract =================================
+
+The general state of the DNS protocol and its interactions with Tor has
+been a subject of conversation for many years. It seems prudent to
+discuss how Tor and DNS are used together. It also is important to
+comment on how DNS works or doesn't work in practice with the Tor
+network today.
+
+This email is an attempt to cover every aspect of interacting with the
+DNS with regard to Tor in a single place. This email covers running as a
+Tor client, using third party software to interact with the internet
+through a Tor client, and the various DNS requirements or duties of Tor
+relays.
+
+The secondary purpose of this mail is to show that there is currently a
+gap in the DNS functionality of Tor. I aim to partially close that gap
+by (re)introducing a new (to us) piece of software to the Tor ecosystem:
+ttdnsd - The Tor TCP DNS Daemon. If you already understand how Tor
+handles DNS and understand the limits, jump to the end of the email to
+read about ttdnsd. Everyone else should read this email in its entirety.
+
 ========================== Prerequisites  ==============================
 
 You should have a basic understanding of how Tor works and you should
@@ -20,27 +41,6 @@ Feel free to drop by our (SSL/TLS enabled on port 6697) IRC channel:
 
 If you need additional help, feel free to send an email to
 tor-assistants@torproject.org and we'll help you get Tor running!
-
-========================== An Introduction =============================
-
-The general state of the DNS protocol and its interactions with Tor has
-been a subject of conversation for many years. It seems prudent to
-discuss how Tor and DNS are used together. It also is important to
-comment on how DNS works or doesn't work in practice with the Tor
-network today.
-
-This email is an attempt to cover every aspect of interacting with the
-DNS with regard to Tor in a single place. This email covers running as a
-Tor client, using third party software to interact with the internet
-through a Tor client, and the various DNS requirements or duties of Tor
-relays.
-
-The secondary purpose of this mail is to show that there is currently a
-gap in the DNS functionality of Tor. I aim to partially close that gap
-by (re)introducing a new (to us) piece of software to the Tor ecosystem:
-ttdnsd - The Tor TCP DNS Daemon. If you already understand how Tor
-handles DNS and understand the limits, jump to the end of the email to
-read about ttdnsd. Everyone else should read this email in its entirety.
 
 =========================== Tor clients ================================
 
