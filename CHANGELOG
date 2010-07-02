@@ -12,7 +12,9 @@ v0.4 Jul. 1. 2010
  - debian build targets in the Makefile
     - make deb || make deb-src
  - added DNS tests to Makefile
-    - make demo-tests
+    - make basic-dns-test
+    - make demo-dns-tests
+    - make demo
  - new release related targets in the Makefile
     - make src-tar-gz || make signed-src || make git-tag
  - major refactoring of every function
