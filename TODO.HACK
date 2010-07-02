@@ -12,4 +12,6 @@ Certainly 0.5 but probably much later:
 
     re-write ttdnsd to use libevent
     Make supported DNS queries via Tor's SOCKS resolve method
-
+    Should we filter all DNS replies and ensure that they do not contain
+    private addresses. This is similar to the ClientDNSRejectInternalAddresses
+    option that Tor has enabled by default.
