@@ -820,4 +820,7 @@ I'm hopeful that ttdnsd will serve as a useful UDP to TCP shim until we
 find a good way to modify the Tor network to support all of the future
 DNS changes coming down the pipe.
 
+We'd love some help with ttdnsd - please download the source and check out
+TODO.HACK for some outstanding tasks in need of an outstanding hacker.
+
 =========================== Footnotes ==================================
