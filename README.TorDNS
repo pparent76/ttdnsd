@@ -151,9 +151,9 @@ to the Tor network. It is often used as the final proxy in a series of
 proxy chained programs.
 
 In the most simple case, a user may attempt to resolve a hostname with a
-tool like tor-resolve[FOOTNOTE]. tor-resolve is implemented by extending
+tool like tor-resolve[0]. tor-resolve is implemented by extending
 the SOCKS protocol to include the 'RESOLVE' and 'RESOLVE_PTR' SOCKS
-commands. This is documented in the socks-extensions.txt[FOOTNOTE]
+commands. This is documented in the socks-extensions.txt[1]
 specification file. tor-resolve talks to the Tor SOCKS proxy directly.
 
 This method allows a user to resolve 'A' and 'PTR' records; technically,
@@ -262,10 +262,9 @@ reply reports.
 ========================= HTTP(S) Proxies ==============================
 
 The use of HTTP(S) proxies is quite common; thanks to The Great Firefox
-SOCKS Bug[FOOTNOTE], we've had to use, ship, and support
-privoxy[FOOTNOTE] or polipo[FOOTNOTE]. This ensures that web browsing
-was actually responsive. It also improves our general application
-support; many applications do not support SOCKS{4,4A,5}, these
+SOCKS Bug[2], we've had to use, ship, and support privoxy[3] or polipo[4]. This
+ensures that web browsing was actually responsive. It also improves our general
+application support; many applications do not support SOCKS{4,4A,5}, these
 applications often support HTTP(S) proxies.
 
 Whatever your proxy of choice, it's likely that the proxy or proxies are
@@ -297,7 +296,7 @@ only sends host names.  The process of resolving those host names is somewhat
 obtuse. In many cases, a connection is opened and the connecting client never
 needs to learn the address.
 
-Section 6.2 of the tor-spec.txt[FOOTNOTE] outlines the method for
+Section 6.2 of the tor-spec.txt[5] outlines the method for
 connecting to a specific host by name. Specifically, the Tor client
 creates a RELAY_BEGIN cell that includes the DNS host name. This is
 transported to the edge of a given circuit. The Exit node at the end of
@@ -319,7 +318,7 @@ to inspect the actual DNS response.
 ===================== Related DNS-like Stuff ===========================
 
 There is additional handling of DNS and DNS relatated stuff in
-address-spec.txt[4]; this includes .onion and .exit notation. While
+address-spec.txt[6]; this includes .onion and .exit notation. While
 technically these are used in place of host names, they're not directly
 relevant and aren't really important in the scope of Tor's DNS needs.
 
@@ -367,7 +366,7 @@ a single public, open, recursive DNS server.
 ttdnsd is configured by adding name servers to /etc/ttdnsd.conf; by
 default, we're shipping with a known tested, known open recursive name
 server run by Google: 8.8.8.8. We'd be more than happy to ship multiple
-resolvers as long as they don't behave in a funky way[FOOTNOTE].
+resolvers as long as they don't behave in a funky way[7].
 
 ttdnsd is pretty portable; it was originally designed for embedded Linux based
 routers. It currently builds on (Debian, Ubuntu, etc) Gnu/Linux, FreeBSD,
@@ -824,3 +823,19 @@ We'd love some help with ttdnsd - please download the source and check out
 TODO.HACK for some outstanding tasks in need of an outstanding hacker.
 
 =========================== Footnotes ==================================
+
+[0] tor-resolve(1) ships with most distributions of Tor
+
+[1] http://gitweb.torproject.org/tor.git?a=blob_plain;hb=HEAD;f=doc/spec/socks-extensions.txt
+
+[2] https://bugzilla.mozilla.org/show_bug.cgi?id=280661
+
+[3] http://www.privoxy.org/
+
+[4] https://gitweb.torproject.org/polipo.git
+
+[5] http://gitweb.torproject.org/tor.git?a=blob_plain;hb=HEAD;f=doc/spec/tor-spec.txt
+
+[6] http://gitweb.torproject.org/tor.git?a=blob_plain;hb=HEAD;f=doc/spec/address-spec.txt
+
+[7] OpenDNS considers this a feature.
