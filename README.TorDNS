@@ -434,6 +434,9 @@ E012B42D
 gpg: Good signature from "Jacob Appelbaum <jacob@appelbaum.net>"
 gpg:                 aka "Jacob Appelbaum <jacob@torproject.org>"
 
+Obviously the file names, and the date of the signature will vary from release
+to release. It's important to check signatures, if you're going to skip any 
+step, don't skip this one!
 
 ======================== Building ttdnsd ===============================
 
