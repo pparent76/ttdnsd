@@ -76,7 +76,7 @@ demo: install
 	echo "Attempting to lookup MX record for torproject.org through ttdnsd"
 	dig @127.0.0.1 -t mx torproject.org
 
-test: all
+basic-dns-test: all
 	-$(SUDO) killall -9 ttdnsd
 	$(SUDO) sh -ec 'TSOCKS_CONF_FILE=tsocks.conf ./ttdnsd -l'
 	dig @127.0.0.1 -t mx torproject.org
@@ -106,7 +106,7 @@ git-tag:
 	git push public
 
 # These all work; you've broken something if these fail
-demo-tests: demo
+demo-dns-tests: demo
 	dig @127.0.0.1 -x 38.229.70.10
 	dig @127.0.0.1 -t A torproject.org
 	dig @127.0.0.1 -t SOA torproject.org
