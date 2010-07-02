@@ -160,9 +160,10 @@ This method allows a user to resolve 'A' and 'PTR' records; technically,
 it also means that 'CNAME' records will also be resolved if the record
 points to a canonical 'A' record. However, the user will not see that
 there is a 'CNAME' record at any point. The user will only get the
-resolved address if everything works as expected.
+resolved address if everything works as expected. This is far less functional
+than a full DNS implementation.
 
-This is extremely useful but fairly limited:
+Still, this is extremely useful even if fairly limited:
 
 io@uncertainty:~% tor-resolve torproject.org
 38.229.70.10
