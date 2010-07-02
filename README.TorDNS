@@ -318,9 +318,20 @@ relevant and aren't really important in the scope of Tor's DNS needs.
 
 ======================= Old Hope: tor-proxy-dns ========================
 
-Once, a long time ago, we had a super star programmer named Tup in our community. He was anonymous to us. He was a programming machine and we really miss him. We often wonder and worry about what has happened to our friend of sorts. He would crank out code in a myriad of languages that served all sorts of useful purposes. One of the things that he wrote was a small program in python called tor-proxy-dns; Tor interacted with the tor-proxy-dns in a few ways, one of which was to take advantage of the VirtualAddrNetwork configuration option.
+Once, a long time ago, we had a super star programmer named Tup in our
+community. He was anonymous to us. He was a programming machine and we really
+miss him. We often wonder and worry about what has happened to our friend of
+sorts. He would crank out code in a myriad of languages that served all sorts
+of useful purposes. One of the things that he wrote was a small program in
+python called tor-proxy-dns; Tor interacted with the tor-proxy-dns in a few
+ways, one of which was to take advantage of the VirtualAddrNetwork
+configuration option.
 
-VirtualAddrNetwork is an obscure but very useful option for decreasing latency. When enabled, 
+VirtualAddrNetwork is an obscure but very useful option for decreasing latency.
+When enabled, Tor will automatically return a specially mapped ip address. This
+works well except in cases where the ip address is noted by an application,
+such as OpenSSH. This will decrease latency but it has frustrating side
+effects.
 
 ===================== A New Hope: ttdnsd ===============================
 
@@ -774,7 +785,13 @@ may entirely fail with DNSPort.
 
 =================== Additional Security Issues =========================
 
-Unlike the DNSPort, ttdnsd does not provide protection against forged DNS requests. Specifically it does not currently provide the same protecions as ClientDNSRejectInternalAddresses does for responses that contain privacy address space. This means that ttdnsd should be used with slightly more caution unless you're using DNSSEC or DNSCurve enabled resources. If the DNS resources that you're using are actually secured, it's probably more secure to use ttdnsd than to not as Tor does not currently support DNSSEC or DNSCurve.
+Unlike the DNSPort, ttdnsd does not provide protection against forged DNS
+requests. Specifically it does not currently provide the same protecions as
+ClientDNSRejectInternalAddresses does for responses that contain privacy
+address space. This means that ttdnsd should be used with slightly more caution
+unless you're using DNSSEC or DNSCurve enabled resources. If the DNS resources
+that you're using are actually secured, it's probably more secure to use ttdnsd
+than to not as Tor does not currently support DNSSEC or DNSCurve.
 
 ========================= Going Forward ================================
 
