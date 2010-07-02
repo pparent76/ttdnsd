@@ -45,10 +45,13 @@ tor-assistants@torproject.org and we'll help you get Tor running!
 
 ======================= DNS Leaks and You ==============================
 
-There is a common problem with many applications that have the ability to proxy
-connections through the Tor network; when a connection is made, some
-applications will resolve the hostname required for the connection through the
-system resolver, rather than through Tor.
+We say that DNS is leaking or that you've leaked DNS when your computer sends
+DNS requests to the internet without sending them through Tor.
+
+This is a common problem with many applications that have the ability to proxy
+connections through the Tor network. If you're leaking DNS, at the time a
+connection is made, some applications will resolve the hostname required for
+the connection through the system resolver, rather than through Tor.
 
 The general problem of sending DNS requsts through the local network, as
 opposed to using Tor for DNS resolution, is that it makes de-anonymization
@@ -58,11 +61,12 @@ that the local network may tamper with the results.
 
 While it is always the case that Tor users should use Torbutton[-1], not all
 applications benefit from such a plugin. Torbutton ensures that Firefox uses
-the local proxy for name resolution. When an application does not do this but
-rather sends the DNS request through the local network, we refer to this as
-leaking DNS. We try to discover if key applications are leaky but ultimately,
-if your system resolver is sending a DNS request, unless you're using a special
-resolver tunneled over Tor, the jig is up.
+the local proxy for name resolution. It's a practical Firefox DNS leak plugger.
+When an application does not do this but rather sends the DNS request through
+the local network, we refer to this as leaking DNS. We try to discover if key
+applications are leaky but ultimately, if your system resolver is sending a DNS
+request, unless you're using a special resolver tunneled over Tor, the jig is
+up.
 
 In all cases, Tor may provide adequate protection for your queries if you use
 it. The primary issue is that if an application doesn't send Tor a host name
