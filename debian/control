@@ -1,6 +1,6 @@
 Source: ttdnsd
-Priority: extra
 Section: comm
+Priority: extra
 Maintainer: Jacob Appelbaum <jacob@torproject.org>
 Build-Depends: debhelper (>= 5), libssl-dev (>= 0.9.8k-6)
 Standards-Version: 3.8.4.0
