@@ -369,10 +369,11 @@ default, we're shipping with a known tested, known open recursive name
 server run by Google: 8.8.8.8. We'd be more than happy to ship multiple
 resolvers as long as they don't behave in a funky way[FOOTNOTE].
 
-ttdnsd is pretty portable. It currently builds on (Debian, Ubuntu, etc)
-Gnu/Linux, FreeBSD, NetBSD, Mac OS X, and perhaps someday also on
-Windows. Patches are gladly accepted; bug reports are useful too, I'm
-sure there's a lot to catch!
+ttdnsd is pretty portable; it was originally designed for embedded Linux based
+routers. It currently builds on (Debian, Ubuntu, etc) Gnu/Linux, FreeBSD,
+NetBSD, Mac OS X, and perhaps someday also on Windows.  It builds on the iPhone
+but does not seem to function. Patches are gladly accepted; bug reports are
+useful too, I'm sure there's a lot to catch!
 
 ttdnsd almost certainly must be run as root to function properly. It
 drops privileges after it bind()s to port 53 on 127.0.0.1 to listen for
