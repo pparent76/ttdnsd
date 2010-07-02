@@ -1,0 +1,790 @@
+========================== Prerequisites  ==============================
+
+You should have a basic understanding of how Tor works and you should
+have a working Tor installation. You can download Tor in a few ways:
+
+	https://www.torproject.org/finding-tor
+
+It is probably possible and the most straight forward to download it
+from our website directly:
+
+	https://www.torproject.org/download.html
+
+If you can't directly reach our website, send an email to
+gettor@torproject.org - our email robot will send you binaries and/or
+source code.
+
+Feel free to drop by our (SSL/TLS enabled on port 6697) IRC channel:
+
+	irc://irc.oftc.net in channel #tor
+
+If you need additional help, feel free to send an email to
+tor-assistants@torproject.org and we'll help you get Tor running!
+
+========================== An Introduction =============================
+
+The general state of the DNS protocol and its interactions with Tor has
+been a subject of conversation for many years. It seems prudent to
+discuss how Tor and DNS are used together. It also is important to
+comment on how DNS works or doesn't work in practice with the Tor
+network today.
+
+This email is an attempt to cover every aspect of interacting with the
+DNS with regard to Tor in a single place. This email covers running as a
+Tor client, using third party software to interact with the internet
+through a Tor client, and the various DNS requirements or duties of Tor
+relays.
+
+The secondary purpose of this mail is to show that there is currently a
+gap in the DNS functionality of Tor. I aim to partially close that gap
+by (re)introducing a new (to us) piece of software to the Tor ecosystem:
+ttdnsd - The Tor TCP DNS Daemon. If you already understand how Tor
+handles DNS and understand the limits, jump to the end of the email to
+read about ttdnsd. Everyone else should read this email in its entirety.
+
+=========================== Tor clients ================================
+
+Tor as a client generally does not need the DNS to function. The Tor
+client bootstraps with IPv4 addresses that are compiled into Tor; the
+client may also have a cached copy of a recent network consensus. The
+Tor client will open connections to those nodes without the need for
+name resolution. The exception to this rule is when Tor must use a proxy
+to connect to the Tor network. If you don't need a proxy that uses a
+hostname, you won't need DNS at all for running a Tor client. If you use
+a proxy with a fully qualified domain name, your Tor client will perform
+resolution with your system DNS resolver. The timeout for DNS resolution
+requests performed by Tor as a client is 300 seconds and the maximum
+host name length is 256 bytes.
+
+======================= Tor Hidden Services ============================
+
+Tor is able to run hidden services that connect to a given DNS name:
+
+	HiddenServicePort 443 www.noisebridge.net:443
+
+If Tor is configured with such a HiddenServicePort, Tor will use the
+system resolver to resolve the name. This will happen at the time the
+configuration change is noticed by Tor; generally this is at start up
+but may also be during a HUP or SETCONF event.
+
+=========================== Tor relays =================================
+
+Tor as a relay is slightly more complex. There are generally two kinds
+of Tor relays. The first is commonly called a middle node. The second is
+commonly called an exit node. These are generalizations and do not
+describe anything beyond the exit policy of the relay. A directory
+authority may be a middle relay or an exit relay, the bridge directory
+may be an middle relay or an exit relay, and so on.
+
+A middle relay is any Tor relay that does not allow exiting to the
+internet on any port. A bridge may technically be a middle node with the
+appropriate exit policy. Generally, users interact with middle relays in
+two ways. The first is as a point of entry to the Tor network and the
+second is as an intermediate relay in any circuit used before exiting
+the Tor network.
+
+Exit relays are what we call a relay that allows exiting in their exit
+policy. For the purposes of DNS, it's important to note that a node does
+not need to be marked as an exit in the network consensus to perform
+resolution services for a client. Any node that doesn't have an exit
+policy of 'reject *:*' may be used for DNS resolution purposes. Tor
+preemptively builds circuits and Tor will use those circuits for DNS
+resolution.
+
+Additionally, both of these general types of relays may perform name
+resolution for themselves. If the relay is configured with a host name
+in the 'Address' configuration section of their torrc configurtion, the
+relay will attempt to use that name in the ip address discovery process.
+Without 'Address' set to an ip address, Tor will also attempt lookups on
+the host name. The relay will use the system resolver to make this
+resolve request. All of this is handled by eventdns from libevent.
+
+Any Tor relay may also expose interfaces (SOCKS, TransPort, DNSPort,
+etc) for use as a client; a user does not need to run two copies of Tor
+to relay for the network and to use it as a client. This has no impact
+on DNS requests. Such a configuration generates no additional DNS
+traffic beyond the above mentioned DNS requirements.
+
+It is also reasonable to configure Tor to use a different list of
+resolvers, rather than the system resolver. This is especially useful
+when you have a system wide resolver that tunnels over Tor.
+
+There is a maximum of 256 of outstanding DNS requests and the maximum
+host name is 256 bytes long. Tor will also only wait 300 seconds after
+sending a request before deciding that a reply will never come.
+
+It is possible to check the total number of cached DNS responses for a
+Tor relay by sending the SIGUSR1 signal to a Tor relay:
+
+	kill -SIGUSR1 30521
+
+Tor will send notice level log events with the number of currently
+cached responses:
+
+Jul 02 08:57:53.131 [notice] Our DNS cache has 5 entries.
+Jul 02 08:57:53.131 [notice] Our DNS cache size is approximately 4856 bytes.
+
+=========================== DNS and UDP ================================
+
+As most everyone reading this email knows, Tor does not transport UDP
+traffic. This presents a rather annoying problem for anyone wanting to
+use UDP protocols and this is essentially everyone. DNS is probably the
+most popular and well known UDP protocol on the planet. Since we don't
+provide any kind of UDP transport for Tor clients, we've had to cherry
+pick which kinds of DNS requests we'd like to support.
+
+In general there are a few methods for users to interface with Tor as a
+client. Each method will eventually result in a resolution or a failure
+for various DNS request types. The four most common ways for users to
+interact with Tor all support basic DNS requests:
+
+  A local SOCKS4A and SOCKS5 provided by Tor
+  The DNSPort provided by Tor
+  HTTP(S) proxies such as polipo or privoxy
+  A DNS shim that acts as a UDP to TCP translator
+
+========================= SOCKS4A/SOCKS5 ===============================
+
+Tor provides a SOCKS proxy as an interface for making connections and
+resolving host names. This is probably the most commonly used interface
+to the Tor network. It is often used as the final proxy in a series of
+proxy chained programs.
+
+In the most simple case, a user may attempt to resolve a hostname with a
+tool like tor-resolve[FOOTNOTE]. tor-resolve is implemented by extending
+the SOCKS protocol to include the 'RESOLVE' and 'RESOLVE_PTR' SOCKS
+commands. This is documented in the socks-extensions.txt[FOOTNOTE]
+specification file. tor-resolve talks to the Tor SOCKS proxy directly.
+
+This method allows a user to resolve 'A' and 'PTR' records; technically,
+it also means that 'CNAME' records will also be resolved if the record
+points to a canonical 'A' record. However, the user will not see that
+there is a 'CNAME' record at any point. The user will only get the
+resolved address if everything works as expected.
+
+This is extremely useful but fairly limited:
+
+io@uncertainty:~% tor-resolve torproject.org
+38.229.70.10
+
+io@uncertainty:~% tor-resolve -x 38.229.70.10
+torproject.org
+
+============================= DNSPort ==================================
+
+It is also possible for a user to configure Tor with the DNSPort option.
+The DNSPort option makes Tor into a small DNS server and a user may use
+it like any other:
+
+root@uncertainty:~# tail -n 2 /etc/tor/torrc
+DNSListenAddress 127.0.0.1
+DNSPort 53
+
+root@uncertainty:~# /etc/init.d/tor start|tail -n3
+Jul 01 03:31:11.441 [notice] Opening Socks listener on 127.0.0.1:9050
+Jul 01 03:31:11.441 [notice] Opening DNS listener on 127.0.0.1:53
+done.
+
+This allows a user to directly query Tor as if it were a normal
+recursive DNS server:
+
+io@uncertainty:~% dig @127.0.0.1 torproject.org
+
+; <<>> DiG 9.7.0-P1 <<>> @127.0.0.1 torproject.org
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 55122
+;; flags: qr rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 0
+
+;; QUESTION SECTION:
+;torproject.org.			IN	A
+
+;; ANSWER SECTION:
+torproject.org.		300	IN	A	38.229.70.10
+
+;; Query time: 328 msec
+;; SERVER: 127.0.0.1#53(127.0.0.1)
+;; WHEN: Thu Jul  1 03:31:49 2010
+;; MSG SIZE  rcvd: 48
+
+io@uncertainty:~% dig @127.0.0.1 -t ptr 38.229.70.10
+
+; <<>> DiG 9.7.0-P1 <<>> @127.0.0.1 -t ptr 38.229.70.10
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 64000
+;; flags: qr rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 0
+
+;; QUESTION SECTION:
+;38.229.70.10.			IN	PTR
+
+;; ANSWER SECTION:
+38.229.70.10.		10800	IN	PTR	torproject.org.
+
+;; Query time: 3075 msec
+;; SERVER: 127.0.0.1#53(127.0.0.1)
+;; WHEN: Thu Jul  1 03:32:28 2010
+;; MSG SIZE  rcvd: 58
+
+This is fine until you attempt to do anything outside of those two
+request types:
+
+io@uncertainty:~% dig @127.0.0.1 -t mx torproject.org
+
+; <<>> DiG 9.7.0-P1 <<>> @127.0.0.1 -t mx torproject.org
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 36819
+;; flags: qr rd ra; QUERY: 1, ANSWER: 0, AUTHORITY: 0, ADDITIONAL: 0
+
+;; QUESTION SECTION:
+;torproject.org.			IN	MX
+
+;; Query time: 0 msec
+;; SERVER: 127.0.0.1#53(127.0.0.1)
+;; WHEN: Thu Jul  1 03:35:40 2010
+;; MSG SIZE  rcvd: 32
+
+Having a local DNS server is useful; many applications may only support
+SOCKS4, rather than SOCKS4A or SOCKS5 - their failure could lead to
+de-anonymization. It is also useful to ensure that possible DNS leaks
+will fail closed - if your system only knows about 127.0.0.1:53, it's
+hard but not impossible to leak DNS packets to the general internet. The
+DNSPort performs basic caching services, there is a hard coded time out
+for the internal cache. The DNS packets returned to the client by the
+DNSPort have a TTL time that is equal to what the upstream authoritative
+reply reports.
+
+========================= HTTP(S) Proxies ==============================
+
+The use of HTTP(S) proxies is quite common; thanks to The Great Firefox
+SOCKS Bug[FOOTNOTE], we've had to use, ship, and support
+privoxy[FOOTNOTE] or polipo[FOOTNOTE]. This ensures that web browsing
+was actually responsive. It also improves our general application
+support; many applications do not support SOCKS{4,4A,5}, these
+applications often support HTTP(S) proxies.
+
+Whatever your proxy of choice, it's likely that the proxy or proxies are
+chained into the SOCKS interface. In rare cases, you may use a proxy
+that is transparently torified. In all cases, the proxy is limited in
+the types of records that are available to the application as mentioned
+above.
+
+The proxy generally opens a connection to the destination host name and
+the the Exit node will satisfy simple DNS resolution requests. This is
+part of the Tor protocol itself and it does not include full DNS
+resolution service.
+
+===================== Tor DNS Internals ================================
+
+All of of the above methods are limited. In fact, they're equally
+limited. They're all using the same internals in your local Tor client
+to perform resolution.
+
+The SOCKS commands mentioned above are satisfied by the Tor client and
+the relevant resolution may occur at the edge of the Tor network.
+
+Section 6.2 of the tor-spec.txt[FOOTNOTE] outlines the method for
+connecting to a specific host by name. Specifically, the Tor client
+creates a RELAY_BEGIN cell that includes the DNS host name. This is
+transported to the edge of a given circuit. The Exit node at the end of
+the circuit does all of the heavy lifting, it performs the name
+resolution directly with the Exit node's system resolver.
+
+If all goes well, the Exit node will respond with a RELAY_CONNECTED
+cell. If successful the payload of this cell will include the IPv4
+address for the host name. In theory, it may include an IPv6 address.
+
+Currently there is no IPv6 resolution supported by any version of Tor
+but it's nice that the protocol is Real World compatible without too
+much tinkering. If the query fails, the Exit node will reply with a
+RELAY_END cell and the user is left without her DNS requests being
+answered. There are many reasons that this may happen and the user no
+reasonable ability to inspect the actual DNS response.
+
+Tor clients resolve DNS requests by sending them over circuits. The two
+DNS request types may be satisfied by almost all modern Tor exit nodes
+that allows connections to the general internet.
+
+===================== Related DNS-like Stuff ===========================
+
+There is additional handling of DNS and DNS relatated stuff in
+address-spec.txt[4]; this includes .onion and .exit notation. While
+technically these are used in place of host names, they're not directly
+relevant and aren't really important in the scope of Tor's DNS needs.
+
+======================= Old Hope: tor-proxy-dns ========================
+
+Once, a long time ago, we had a super star programmer named Tup in our community. He was anonymous to us. He was a programming machine and we really miss him. We often wonder and worry about what has happened to our friend of sorts. He would crank out code in a myriad of languages that served all sorts of useful purposes. One of the things that he wrote was a small program in python called tor-proxy-dns; Tor interacted with the tor-proxy-dns in a few ways, one of which was to take advantage of the VirtualAddrNetwork configuration option.
+
+VirtualAddrNetwork is an obscure but very useful option for decreasing latency. When enabled, 
+
+===================== A New Hope: ttdnsd ===============================
+
+The Tor Project has adopted The Tor TCP DNS Daemon, herein known as
+ttdnsd, from code originally written by the Fantastic Collin Mulliner.
+He was kind enough to re-license it under the BSD license and send it
+our way. Myself, Roger, Kragen, Nick, and others have spent some spare
+time over the last month hacking on it. We've made a lot of improvements
+and we think there's a lot more to be done. ttdnsd is a useful way to
+work around the limitations inherent in how DNS is currently handled.
+
+ttdnsd is a small C program that allows you to make arbitrary DNS
+requests of any type. This is possible because ttdnsd converts any UDP
+request it receives into a TCP connection. It shuffles the data to an
+open recursive DNS server on the internet, waits for a reply, and then
+sends the reply back over the UDP socket where it received the original
+query. This means that ttdnsd uses Tor like any other TCP application.
+It also means that for ttdnsd to function, you'll need to have at least
+a single public, open, recursive DNS server.
+
+ttdnsd is configured by adding name servers to /etc/ttdnsd.conf; by
+default, we're shipping with a known tested, known open recursive name
+server run by Google: 8.8.8.8. We'd be more than happy to ship multiple
+resolvers as long as they don't behave in a funky way[FOOTNOTE].
+
+ttdnsd is pretty portable. It currently builds on (Debian, Ubuntu, etc)
+Gnu/Linux, FreeBSD, NetBSD, Mac OS X, and perhaps someday also on
+Windows. Patches are gladly accepted; bug reports are useful too, I'm
+sure there's a lot to catch!
+
+ttdnsd almost certainly must be run as root to function properly. It
+drops privileges after it bind()s to port 53 on 127.0.0.1 to listen for
+UDP DNS requests; this is similar to DNSPort but provides access to a
+larger set of record types.
+
+ttdnsd presents a small privacy trade-off but it allows for nearly all
+DNS records to be resolved. The main privacy concern is that there is a
+third party or a list of third parties that will answer your DNS
+queries. As you change circuits, they will always be contacted for DNS
+requests directed over ttdnsd. It is unclear how widely this differs
+from the real world resolution process that happens now; what is the
+major DNS resolver used by Tor servers currently? Do we already do this
+with a third party?
+
+=================== Installing ttdnsd with dpkg ========================
+
+If you have our Debian package repository added to your sources.list
+file, installing ttdnsd is as easy as:
+
+	apt-get update
+	apt-get install ttdnsd
+
+You'll should have a Tor running and then you should run ttdnsd:
+
+	/etc/init.d/ttdnsd start
+
+If you'd like ttdnsd to start on boot, add it to the right rc.d locations:
+
+	update-rc.d -f ttdnsd defaults
+
+====================== ttdnsd git Repositories =========================
+
+The most up to date code for ttdnsd is in my tor-extra git repo:
+https://gitweb.torproject.org/ioerror/ttdnsd.git
+
+When we're ready for a Serious Release, it will have its own git repo:
+https://gitweb.torproject.org/ttdnsd.git
+
+======================== ttdnsd tar.gz Files ===========================
+
+If you're git adverse, I've also made a (signed) tar.gz:
+
+	http://crypto.nsa.org/tor/ttdnsd-0.4.tar.gz
+	http://crypto.nsa.org/tor/ttdnsd-0.4.tar.gz.asc
+
+Fetch the tar.gz file and the signature:
+
+	cd /tmp
+	wget http://crypto.nsa.org/tor/ttdnsd-0.4.tar.gz{,.asc}
+
+===================== Verifying GPG Signatures =========================
+
+You should verify that the file is properly signed by my GPG key. If you
+don't have it, you'll need to fetch it:
+
+% gpg --recv-key 0xE012B42D
+gpg: requesting key E012B42D from hkp server pool.sks-keyservers.net
+gpg: key E012B42D: "Jacob Appelbaum <jacob@appelbaum.net>" not changed
+gpg: Total number processed: 1
+gpg:              unchanged: 1
+
+
+You should expect to see a good signature for the source code you've
+just downloaded:
+
+% gpg --verify ttdnsd-0.4.tar.gz.asc
+gpg: Signature made Thu 01 Jul 2010 01:55:15 AM PDT using RSA key ID
+E012B42D
+gpg: Good signature from "Jacob Appelbaum <jacob@appelbaum.net>"
+gpg:                 aka "Jacob Appelbaum <jacob@torproject.org>"
+
+
+======================== Building ttdnsd ===============================
+
+Next, you'll want to unpack the source code:
+
+	tar -xvzf ttdnsd-0.4.tar.gz
+
+You'll need nothing more than what is required to build Tor. Compile it
+with make:
+
+	cd ttdnsd-0.4
+	make
+
+If you'd like to install it directly, you can use the 'install' make target:
+
+	make install
+
+We also provide targets for building a Debian package ('deb'), tests to
+ensure that your build works ('demo-tests'), and other useful things for
+release engineering. Read the Makefile for more information.
+
+======================== Starting ttdnsd ===============================
+
+Using ttdnsd is quite straight forward. First, you'll want to run it by
+starting it with the init.d script:
+
+	/etc/init.d/ttdnsd start
+
+You should see that it is running:
+
+nobody   24108  0.3  0.0  17072  1376 ?        Ss   18:30   0:00
+/usr/sbin/ttdnsd -b 127.0.0.1 -p 53 -P /var/run/ttdnsd/pid -f
+/etc/ttdnsd.conf
+
+After startup, ttdnsd chroots and quickly drops privileges. You should
+see that it is listening on UDP port 53, it should be bound to 127.0.0.1
+by default:
+
+ttdnsd    24108 nobody    3u  IPv4 5458297      0t0  UDP 127.0.0.1:domain
+
+======================== Resolving Hosts ===============================
+
+If you'd like your entire system to use ttdnsd for resolution, you'll
+want to add 127.0.0.1 to the system /etc/resolv.conf file.
+
+You can now use any program that requires working DNS and your entire
+system will resolve things through ttdnsd.
+
+A basic example is as follows:
+
+	dig @127.0.0.1 -t mx gmail.com
+
+You should see something like the following:
+
+; <<>> DiG 9.7.0-P1 <<>> @127.0.0.1 -t mx gmail.com
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 56356
+;; flags: qr rd ra; QUERY: 1, ANSWER: 5, AUTHORITY: 0, ADDITIONAL: 0
+
+;; QUESTION SECTION:
+;gmail.com.			IN	MX
+
+;; ANSWER SECTION:
+gmail.com.		2858	IN	MX	40 alt4.gmail-smtp-in.l.google.com.
+gmail.com.		2858	IN	MX	5 gmail-smtp-in.l.google.com.
+gmail.com.		2858	IN	MX	10 alt1.gmail-smtp-in.l.google.com.
+gmail.com.		2858	IN	MX	30 alt3.gmail-smtp-in.l.google.com.
+gmail.com.		2858	IN	MX	20 alt2.gmail-smtp-in.l.google.com.
+
+;; Query time: 413 msec
+;; SERVER: 127.0.0.1#53(127.0.0.1)
+;; WHEN: Thu Jul  1 18:41:05 2010
+;; MSG SIZE  rcvd: 150
+
+Assuming that it's working properly, you should be able to resolve
+almost any DNS record. The 'demo-tests' target keeps track of working
+requests that we're using as tests. Here's a sample output of those tests:
+
+; <<>> DiG 9.7.0-P1 <<>> @127.0.0.1 -t mx torproject.org
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 11875
+;; flags: qr rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 0
+
+;; QUESTION SECTION:
+;torproject.org.			IN	MX
+
+;; ANSWER SECTION:
+torproject.org.		3600	IN	MX	10 eugeni.torproject.org.
+
+;; Query time: 1158 msec
+;; SERVER: 127.0.0.1#53(127.0.0.1)
+;; WHEN: Thu Jul  1 18:35:21 2010
+;; MSG SIZE  rcvd: 55
+
+dig @127.0.0.1 -x 38.229.70.10
+
+; <<>> DiG 9.7.0-P1 <<>> @127.0.0.1 -x 38.229.70.10
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 47484
+;; flags: qr rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 0
+
+;; QUESTION SECTION:
+;10.70.229.38.in-addr.arpa.	IN	PTR
+
+;; ANSWER SECTION:
+10.70.229.38.in-addr.arpa. 86400 IN	PTR	torproject.org.
+
+;; Query time: 1790 msec
+;; SERVER: 127.0.0.1#53(127.0.0.1)
+;; WHEN: Thu Jul  1 18:35:23 2010
+;; MSG SIZE  rcvd: 71
+
+dig @127.0.0.1 -t A torproject.org
+
+; <<>> DiG 9.7.0-P1 <<>> @127.0.0.1 -t A torproject.org
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 63793
+;; flags: qr rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 0
+
+;; QUESTION SECTION:
+;torproject.org.			IN	A
+
+;; ANSWER SECTION:
+torproject.org.		300	IN	A	38.229.70.10
+
+;; Query time: 2020 msec
+;; SERVER: 127.0.0.1#53(127.0.0.1)
+;; WHEN: Thu Jul  1 18:35:25 2010
+;; MSG SIZE  rcvd: 48
+
+dig @127.0.0.1 -t SOA torproject.org
+
+; <<>> DiG 9.7.0-P1 <<>> @127.0.0.1 -t SOA torproject.org
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 55323
+;; flags: qr rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 0
+
+;; QUESTION SECTION:
+;torproject.org.			IN	SOA
+
+;; ANSWER SECTION:
+torproject.org.		3600	IN	SOA	fallax.torproject.org.
+torproject-admin.torproject.org. 2010062602 10800 3600 604800 3600
+
+;; Query time: 1994 msec
+;; SERVER: 127.0.0.1#53(127.0.0.1)
+;; WHEN: Thu Jul  1 18:35:27 2010
+;; MSG SIZE  rcvd: 92
+
+dig @127.0.0.1 -t NS torproject.org
+
+; <<>> DiG 9.7.0-P1 <<>> @127.0.0.1 -t NS torproject.org
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 11920
+;; flags: qr rd ra; QUERY: 1, ANSWER: 2, AUTHORITY: 0, ADDITIONAL: 0
+
+;; QUESTION SECTION:
+;torproject.org.			IN	NS
+
+;; ANSWER SECTION:
+torproject.org.		3600	IN	NS	csail.seul.org.
+torproject.org.		3600	IN	NS	asteria.debian.or.at.
+
+;; Query time: 2011 msec
+;; SERVER: 127.0.0.1#53(127.0.0.1)
+;; WHEN: Thu Jul  1 18:35:29 2010
+;; MSG SIZE  rcvd: 91
+
+dig @127.0.0.1 -t MX torproject.org
+
+; <<>> DiG 9.7.0-P1 <<>> @127.0.0.1 -t MX torproject.org
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 27205
+;; flags: qr rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 0
+
+;; QUESTION SECTION:
+;torproject.org.			IN	MX
+
+;; ANSWER SECTION:
+torproject.org.		3591	IN	MX	10 eugeni.torproject.org.
+
+;; Query time: 2050 msec
+;; SERVER: 127.0.0.1#53(127.0.0.1)
+;; WHEN: Thu Jul  1 18:35:31 2010
+;; MSG SIZE  rcvd: 55
+
+dig @127.0.0.1 -t CNAME svn.freehaven.net
+
+; <<>> DiG 9.7.0-P1 <<>> @127.0.0.1 -t CNAME svn.freehaven.net
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 30467
+;; flags: qr rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 0
+
+;; QUESTION SECTION:
+;svn.freehaven.net.		IN	CNAME
+
+;; ANSWER SECTION:
+svn.freehaven.net.	3600	IN	CNAME	moria.freehaven.net.
+
+;; Query time: 1937 msec
+;; SERVER: 127.0.0.1#53(127.0.0.1)
+;; WHEN: Thu Jul  1 18:35:33 2010
+;; MSG SIZE  rcvd: 55
+
+dig @127.0.0.1 -t srv _xmpp-client._tcp.google.com
+
+; <<>> DiG 9.7.0-P1 <<>> @127.0.0.1 -t srv _xmpp-client._tcp.google.com
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 48258
+;; flags: qr rd ra; QUERY: 1, ANSWER: 5, AUTHORITY: 0, ADDITIONAL: 0
+
+;; QUESTION SECTION:
+;_xmpp-client._tcp.google.com.	IN	SRV
+
+;; ANSWER SECTION:
+_xmpp-client._tcp.google.com. 900 IN	SRV	5 0 5222 talk.l.google.com.
+_xmpp-client._tcp.google.com. 900 IN	SRV	20 0 5222 talk1.l.google.com.
+_xmpp-client._tcp.google.com. 900 IN	SRV	20 0 5222 talk4.l.google.com.
+_xmpp-client._tcp.google.com. 900 IN	SRV	20 0 5222 talk3.l.google.com.
+_xmpp-client._tcp.google.com. 900 IN	SRV	20 0 5222 talk2.l.google.com.
+
+;; Query time: 2070 msec
+;; SERVER: 127.0.0.1#53(127.0.0.1)
+;; WHEN: Thu Jul  1 18:35:35 2010
+;; MSG SIZE  rcvd: 235
+dig @127.0.0.1 -t aaaa www.kame.net
+
+; <<>> DiG 9.7.0-P1 <<>> @127.0.0.1 -t aaaa www.kame.net
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 35454
+;; flags: qr rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 0
+
+;; QUESTION SECTION:
+;www.kame.net.			IN	AAAA
+
+;; ANSWER SECTION:
+www.kame.net.		75737	IN	AAAA	2001:200:0:8002:203:47ff:fea5:3085
+
+;; Query time: 2010 msec
+;; SERVER: 127.0.0.1#53(127.0.0.1)
+;; WHEN: Thu Jul  1 18:35:37 2010
+;; MSG SIZE  rcvd: 58
+
+dig @127.0.0.1 -t RRSIG nic.se
+
+; <<>> DiG 9.7.0-P1 <<>> @127.0.0.1 -t RRSIG nic.se
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 757
+;; flags: qr rd ra; QUERY: 1, ANSWER: 8, AUTHORITY: 0, ADDITIONAL: 0
+
+;; QUESTION SECTION:
+;nic.se.				IN	RRSIG
+
+;; ANSWER SECTION:
+nic.se.			3600	IN	RRSIG	DNSKEY 5 2 3600 20100709132001 20100629132001
+16696 nic.se. oavONntdt+8Pr316wC4sKZ7NI1Zlb1+aIMmV/oxipB2uqW19YOFQVFXi
+BBBf1BpT1BWmpkN/ESOlu0mJV/d71i1uLPh/CBB29T1ZGW2ZV/NH/lFd
+a4aXB0uN8uOCPS2QJ7euGR83S8Z4mTjbNL8PpRoZt1g1vKvLVg9BLQnf
+cb+kfuRxjklmB7H/qAinEV74u33YsKKSiOpEX3e+mgTZekwd0Z3a0ahn
+Ii5Ae2VIWYN0nYs01dRwhm4Q2MIvpBJc7J4b06wxgh7qSRbLoT807djI
+VOAdyS93oOJ02GbbLAINDEnOdRQjRAN7rVKjxvYNm8rpD0WVY+sUptxH J8mDfw==
+nic.se.			3600	IN	RRSIG	DNSKEY 5 2 3600 20100709132001 20100629132001
+55823 nic.se. kBLx0gKKLNIk4U8DE/iv2cS7AV97fwItWpSdJ2Olj7k3iCSudD4fbmvi
+zY5IqfmeXH4LwRB/bjt/aZ0dC8ScfayJBhHrgsTiRBKoMbf1MpsTYpqy
+Oc8440mvzJgVJlmPFwhlDIhi0GpHIa1wMiSxxksoWE5sPkHlRdKeTWyn Mjg=
+nic.se.			3600	IN	RRSIG	NSEC 5 2 3600 20100709132001 20100629132001
+55823 nic.se. Z3QdzalLyaMznWbcPnMHx+szaIXYPVTyGIgAt5cHR2LUfBA5zFnc97YT
+EyKf6TaT1lqkF+N5sZq/AqmxoSaDwrE8MvOipCmKt7zYGYyKjwXgP+D9
+Xq6Yw7m63oZ9bI/LWeWGpqbUP6SM6Ep6uCy2Vg770yUiBrq3ativBpPF 4nA=
+nic.se.			3600	IN	RRSIG	TXT 5 2 3600 20100709132001 20100629132001 55823
+nic.se. cKbHyteyMbSjWlYTbpUIwTFLDhLkve3IEEIpJYGqDS1zlJEyEUwXGICz
+B+CFNBEVurYqOa8pgQnbjeZ1x0yXhfW/9nLgetItRqeatDgIsPAaUOSV
+ocou+S5qjf8d1N0sGbPTwgW8Ox6UqtZNuxC3439dfGEpYddKcFQtZXuv pd0=
+nic.se.			60	IN	RRSIG	MX 5 2 60 20100709132001 20100629132001 55823
+nic.se. R3v4z2rEZhUooLgsNjPO0E16+ZfJ2woyOBvj3urcKqJl6naFkkAsOMPT
+6QcGCpcE3eOhI7nblxcUbCD59h5u+RZuIFsrPkpKHf+qOUJyQcxIGdII
+RC5af5aEJ1THwbwKjEy1Sy4BX491pv/DcSyP38NwuA1sNNsTR49z7y1G EgQ=
+nic.se.			60	IN	RRSIG	A 5 2 60 20100709132001 20100629132001 55823
+nic.se. BJAEBo/oFE+0UQVQgKjwParFf9niSTCGs2h2rvfv0anVgajJ0zhHql8B
+gq3BiD+VnfAkhJ7KpQ/6qY75iKtwiOIBpC0+zKHSPMfSVocVXGIBqzmH
+KXBaWp33iiCmxz8kYPF5I2A/DB2wn2DDpKOWnGu0bHTODVw2pdu7hPzA aEE=
+nic.se.			3600	IN	RRSIG	NS 5 2 3600 20100709132001 20100629132001 55823
+nic.se. trYpBLcAz7Cqy0yoNLhSQVfBDlUBIJgDLOcKcU6urQz6toXC/L+CuONw
+lGk1xmnVUTA4P8juS8Z3FZZDgy/qHwDkLLC34lr39TnenWPe+H40Y3iA
+125v+ekGegOMQgSfH/W/iSyNZPUI67+FHnoEfrV+MbWJos8HofUv5slX 9Wg=
+nic.se.			3600	IN	RRSIG	SOA 5 2 3600 20100709132001 20100629132001 55823
+nic.se. vq2awZI3aKXf0yoy1wdFxz6Uk2j6Zv/x4AaJRg8O+qJumAtA4JrW98jm
+tf4LfJGBADihXiZOZLFH1Vkwl31+zK9GjokysZikvC6fUa3qlxZtRH3a
+5OWj6HMs/ctMrh0wvwPQZ3SOYp+9zUEAYF178NyfQ/B93ujyFFAaVKqQ jkw=
+
+;; Query time: 2344 msec
+;; SERVER: 127.0.0.1#53(127.0.0.1)
+;; WHEN: Thu Jul  1 18:35:39 2010
+;; MSG SIZE  rcvd: 1480
+
+========================= Caching Answers ==============================
+
+If you have a local DNS cache, it's probably reasonable to configure
+ttdnsd as your cache's DNS cache. We've heard good things about unbound
+and also djb's dnscache. Any DNS cache that doesn't leak requests to the
+network is probably a reasonable choice. ttdnsd doesn't cache answers in
+any meaningful way and so it is probably required that you run your own
+cache in front of ttdnsd for better performance.
+
+It may be reasonable to run a local DNSPort on 127.0.0.1:53, a copy of
+ttdnsd on 127.0.0.2:53, and some kind of DNS cache on 127.0.0.3:53. If
+the resolver on 127.0.0.3:53 is the system resolver and it prefers
+127.0.0.1:53, it may only resolve with ttdnsd when Tor is otherwise
+unable to resolve the hostnames. This kind of failure mode may take
+longer but will ultimately be cached, only using the less privacy
+friendly DNS resolution services when absolutely necessary. Your
+kilometerage may vary.
+
+==================== Additional Privacy Issues =========================
+
+As a small side note, it is often the case that third party XMPP clients
+attempt to look up SRV records when registering an XMPP account. Sadly
+many clients appear to simply leak the server information, even if the
+account has been explicitly configured to use a proxy. It is the authors
+personal opinion that these clients should behave differently: people
+use proxies for many reasons, not the least of which may be for security
+or privacy issues posed by sending unencrypted data to the local
+network. By using ttdnsd or the DNSPort, the system resolver should fail
+to leak the DNS requests to the local network. When using ttdnsd, it
+should be possible for things to simply work transparently, whereas they
+may entirely fail with DNSPort.
+
+
+=================== Additional Security Issues =========================
+
+Unlike the DNSPort, ttdnsd does not provide protection against forged DNS requests. Specifically it does not currently provide the same protecions as ClientDNSRejectInternalAddresses does for responses that contain privacy address space. This means that ttdnsd should be used with slightly more caution unless you're using DNSSEC or DNSCurve enabled resources. If the DNS resources that you're using are actually secured, it's probably more secure to use ttdnsd than to not as Tor does not currently support DNSSEC or DNSCurve.
+
+========================= Going Forward ================================
+
+There are many areas where we may be able to improve the way that Tor
+handles arbitrary DNS request types; if you feel like being the one to
+Bell The Cat for any of these DNS issues: feel free to chime in! It's
+likely going to take a proposal or two to really change things.
+
+I'm hopeful that ttdnsd will serve as a useful UDP to TCP shim until we
+find a good way to modify the Tor network to support all of the future
+DNS changes coming down the pipe.
+
+=========================== Footnotes ==================================
