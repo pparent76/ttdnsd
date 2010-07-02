@@ -499,7 +499,7 @@ release engineering. Read the Makefile for more information.
 
 ======================== Starting ttdnsd ===============================
 
-Using ttdnsd is quite straight forward. First, you'll want to run it by
+Using ttdnsd is quite straightforward. First, you'll want to run it by
 starting it with the init.d script:
 
     /etc/init.d/ttdnsd start
