@@ -7,10 +7,11 @@ comment on how DNS works or doesn't work in practice with the Tor
 network today.
 
 This email is an attempt to cover every aspect of interacting with the
-DNS with regard to Tor in a single place. This email covers running as a
-Tor client, using third party software to interact with the internet
-through a Tor client, and the various DNS requirements or duties of Tor
-relays.
+DNS with regard to Tor in a single place. It is probably a good idea for the
+reader to be familiar with basic DNS and Tor concepts. This email covers
+running as a Tor client, using third party software to interact with the
+internet through a Tor client, and the various DNS requirements or duties of
+Tor relays.
 
 The secondary purpose of this mail is to show that there is currently a
 gap in the DNS functionality of Tor. I aim to partially close that gap
@@ -44,7 +45,30 @@ tor-assistants@torproject.org and we'll help you get Tor running!
 
 ======================= DNS Leaks and You ==============================
 
-Tor users generally want to rem
+There is a common problem with many applications that have the ability to proxy
+connections through the Tor network; when a connection is made, some
+applications will resolve the hostname required for the connection through the
+system resolver, rather than through Tor.
+
+The general problem of sending DNS requsts through the local network, as
+opposed to using Tor for DNS resolution, is that it makes de-anonymization
+fairly trivial. Additionally, the local network now has a fairly good chance of
+knowing what connections you're trying to make anonymously. This also means
+that the local network may tamper with the results.
+
+While it is always the case that Tor users should use Torbutton[-1], not all
+applications benefit from such a plugin. Torbutton ensures that Firefox uses
+the local proxy for name resolution. When an application does not do this but
+rather sends the DNS request through the local network, we refer to this as
+leaking DNS. We try to discover if key applications are leaky but ultimately,
+if your system resolver is sending a DNS request, unless you're using a special
+resolver tunneled over Tor, the jig is up.
+
+In all cases, Tor may provide adequate protection for your queries if you use
+it. The primary issue is that if an application doesn't send Tor a host name
+for resolution, Tor won't be able to protect the application's request.
+
+Be cautious about DNS leaks; only you can stop DNS leaks!
 
 =========================== Tor clients ================================
 
@@ -64,7 +88,7 @@ host name length is 256 bytes.
 
 Tor is able to run hidden services that connect to a given DNS name:
 
-	HiddenServicePort 443 www.noisebridge.net:443
+    HiddenServicePort 443 www.noisebridge.net:443
 
 If Tor is configured with such a HiddenServicePort, Tor will use the
 system resolver to resolve the name. This will happen at the time the
@@ -827,6 +851,8 @@ We'd love some help with ttdnsd - please download the source and check out
 TODO.HACK for some outstanding tasks in need of an outstanding hacker.
 
 =========================== Footnotes ==================================
+
+[-1] https://www.torproject.org/torbutton/
 
 [0] tor-resolve(1) ships with most distributions of Tor
 
