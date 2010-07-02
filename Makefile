@@ -103,6 +103,7 @@ signed-src: src-tar-gz
 git-tag:
 	git tag -u $(GPGKEYID) ttdnsd-$(TTDNSDVERSION)
 	git push tag ttdnsd-$(TTDNSDVERSION)
+	git push public
 
 # These all work; you've broken something if these fail
 demo-tests: demo
