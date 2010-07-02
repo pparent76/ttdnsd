@@ -330,15 +330,20 @@ community. He was anonymous to us. He was a programming machine and we really
 miss him. We often wonder and worry about what has happened to our friend of
 sorts. He would crank out code in a myriad of languages that served all sorts
 of useful purposes. One of the things that he wrote was a small program in
-python called tor-proxy-dns; Tor interacted with the tor-proxy-dns in a few
-ways, one of which was to take advantage of the VirtualAddrNetwork
-configuration option.
+python called tor-proxy-dns; this software was useful but written in python,
+abandoned by the missing super star, and generally lost to the sands of time.
 
-VirtualAddrNetwork is an obscure but very useful option for decreasing latency.
-When enabled, Tor will automatically return a specially mapped ip address. This
-works well except in cases where the ip address is noted by an application,
-such as OpenSSH. This will decrease latency but it has frustrating side
-effects.
+Tor interacted with tor-proxy-dns in an importat way: it took advantage of the
+VirtualAddrNetwork configuration option.
+
+VirtualAddrNetwork is an obscure but very useful option for decreasing latency
+at connection time. When enabled, Tor will automatically return a specially
+mapped ip address. Eventually, Tor will learn the real address and keep an
+internal mapping between the virtual address and the real address. Tor
+remembers this mapping for the duration of execution but it is not saved
+between Tor restarts. This works  except in cases where the ip address is noted
+by an application, such as OpenSSH. This will decrease perceived and actual
+latency but it has frustrating side effects for some applications.
 
 ===================== A New Hope: ttdnsd ===============================
 
