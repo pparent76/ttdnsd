@@ -1,5 +1,4 @@
 .TH ttdnsd 1 "5 June 2010"
-." This could probably use some love!
 .SH NAME
 ttdnsd - The Tor TCP DNS Daemon
 .SH SYNOPSIS
@@ -16,23 +15,23 @@ ttdnsd [-h | [-b
 -c -d -l]
 .SH DESCRIPTION
 
-.B ttdnsd(1)
+.B ttdnsd
 is a small UDP to TCP DNS shim for use with the
-.B tor(1)
+.B Tor
 SOCKS proxy interface. It should also work with other SOCKS proxies.
 
-.B ttdnsd(1)
+.B ttdnsd
 requires a single recursive DNS listener on the open
 internet to be useful. It provides no DNS caching support and may be chained
 with
-.B unbound(1)
+.B unbound
 or another DNS caching program for performance reasons. By default
-.B ttdnsd(1)
+.B ttdnsd
 ships with
 .I 8.8.8.8
 as the open TCP DNS resolver.
 
-.B ttdnsd(1)
+.B ttdnsd
 creates a TCP connection through the configured SOCKS proxy to the randomly
 chosen DNS resolver(s) as configured in
 .I /etc/ttdns.conf
