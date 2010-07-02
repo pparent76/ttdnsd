@@ -828,13 +828,14 @@ may entirely fail with DNSPort.
 
 =================== Additional Security Issues =========================
 
-Unlike the DNSPort, ttdnsd does not provide protection against forged DNS
-requests. Specifically it does not currently provide the same protecions as
-ClientDNSRejectInternalAddresses does for responses that contain privacy
-address space. This means that ttdnsd should be used with slightly more caution
-unless you're using DNSSEC or DNSCurve enabled resources. If the DNS resources
-that you're using are actually secured, it's probably more secure to use ttdnsd
-than to not as Tor does not currently support DNSSEC or DNSCurve.
+Unlike when a user resolves through Tor with the DNSPort or otherwise, ttdnsd
+does not provide protection against forged DNS requests. Specifically it does
+not currently provide the same protecions as ClientDNSRejectInternalAddresses
+does for responses that contain privacy address space. This means that ttdnsd
+should be used with slightly more caution unless you're using DNSSEC or
+DNSCurve enabled resources. If the DNS resources that you're using are actually
+secured, it's probably more secure to use ttdnsd than to not as Tor does not
+currently support DNSSEC or DNSCurve.
 
 ========================= Going Forward ================================
 
