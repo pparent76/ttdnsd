@@ -2,7 +2,8 @@ TTDNSDVERSION= 0.4
 GPGKEYID=E012B42D
 EXEC = ttdnsd
 CC = /usr/bin/gcc
-CHROOT = /var/run/ttdnsd/
+CHROOT = /var/lib/ttdnsd
+PIDFILE = $(CHROOT)/pid
 CONF = ttdnsd.conf
 TORTSOCKSCONF = tor-tsocks.conf
 MANPAGE = ttdnsd.1
@@ -72,7 +73,7 @@ demo: install
 	echo "Starting ttdnsd"
 	echo "Starting ttdnsd"
 	TSOCKS_CONF_FILE=tsocks.conf ttdnsd -b 127.0.0.1 -p 53 \
-    -P /var/run/ttdnsd/pid -l
+    -P $(PIDFILE) -l
 	echo "Attempting to lookup MX record for torproject.org through ttdnsd"
 	dig @127.0.0.1 -t mx torproject.org
 

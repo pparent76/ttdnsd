@@ -12,20 +12,21 @@ Currently unsupported platforms:
     Plan 9
 
 Basic setup (as root) by hand:
- 1) mkdir /var/run/ttdnsd
- 2) cp /etc/tsocks.conf /var/run/ttdnsd
- 3) cp ttdnsd.conf /var/run/ttdnsd
+ 1) mkdir /var/lib/ttdnsd
+ 2) cp /etc/tsocks.conf /var/lib/ttdnsd
+ 3) cp ttdnsd.conf /var/lib/ttdnsd
  4) TSOCKS_CONF_FILE=tsocks.conf ttdnsd -b 127.0.0.1 -p 53 \
-                     -P /var/run/ttdnsd/pid
+                     -P /var/lib/ttdnsd/pid
 
 Or use the Makefile:
  0) make install
  1) TSOCKS_CONF_FILE=tsocks.conf ttdnsd -b 127.0.0.1 -p 53 \
-                     -P /var/run/ttdnsd/pid
+                     -P /var/lib/ttdnsd/pid
 
 More details at:
- http://www.mulliner.org/collin/ttdnsd.php
+
+    https://www.torproject.org/ttdnsd/
 
 The Current development git tree can be found here:
- https://gitweb.torproject.org/ioerror/tor-extra.git/shortlog/refs/heads/ttdnsd
 
+    https://gitweb.torproject.org/ioerror/ttdnsd.git

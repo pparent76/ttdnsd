@@ -34,7 +34,7 @@
 #define DEFAULT_BIND_IP "127.0.0.1"
 #define DEFAULT_RESOLVERS "ttdnsd.conf"
 #define DEFAULT_LOG "ttdnsd.log"
-#define DEFAULT_CHROOT "/var/run/ttdnsd"
+#define DEFAULT_CHROOT "/var/lib/ttdnsd"
 #define DEFAULT_TSOCKS_CONF "tsocks.conf"
 #define TSOCKS_CONF_ENV "TSOCKS_CONF_FILE"
 #define DEFAULT_PID_FILE DEFAULT_CHROOT"/ttdnsd.pid"
@@ -46,7 +46,7 @@
     "\t-f\t<resolvers>\tfilename to read resolver IP(s) from\n"\
     "\t-P\t<PID file>\tfile to store process ID - pre-chroot\n"\
     "\t-C\t<chroot dir>\tchroot(2) to <chroot dir>\n"\
-    "\t-c\t\t\tDON'T chroot(2) to /var/run/ttdnsd\n"\
+    "\t-c\t\t\tDON'T chroot(2) to /var/lib/ttdnsd\n"\
     "\t-d\t\t\tDEBUG (don't fork and print debug)\n"\
     "\t-l\t\t\twrite debug log to: " DEFAULT_LOG "\n"\
     "\t-h\t\t\tprint this helpful text and exit\n"\

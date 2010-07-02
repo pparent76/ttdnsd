@@ -9,9 +9,9 @@ ttdnsd [-h | [-b
 -f
 .I /etc/ttdns.conf
 -P
-.I /var/run/ttdnsd/pid
+.I /var/lib/ttdnsd/pid
 -C
-.I /var/run/ttdnsd/
+.I /var/lib/ttdnsd/
 -c -d -l]
 .SH DESCRIPTION
 
@@ -97,17 +97,17 @@ Logging mode - this logs into ttdnsd.log
 Must contain at least a single IP address for a TCP aware DNS resolver
 .P
 
-.B /var/run/ttdnsd/pid
+.B /var/lib/ttdnsd/pid
 .IP
 The default pid file
 .P
 
-.B /var/run/ttdnsd/
+.B /var/lib/ttdnsd/
 .IP
 The default ttdnsd chroot path
 .P
 
-.B /var/run/ttdnsd/tsocks.conf
+.B /var/lib/ttdnsd/tsocks.conf
 .IP
 contains the proper
 .B tsocks(1)
@@ -140,9 +140,9 @@ and group
 .I nogroup
 by running the following command:
 
-.B TSOCKS_CONF_FILE=tsocks.conf ttdnsd -b 127.0.0.1 -p 53 -P /var/run/ttdnsd/pid
+.B TSOCKS_CONF_FILE=tsocks.conf ttdnsd -b 127.0.0.1 -p 53 -P /var/lib/ttdnsd/pid
 
-If you're running Gnu/Linux you may use the included init.d script: 
+If you're running Gnu/Linux you may use the included init.d script:
 
 .B /etc/init.d/ttdnsd start
 
