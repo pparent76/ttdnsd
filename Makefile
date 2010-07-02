@@ -82,10 +82,10 @@ basic-dns-test: all
 	dig @127.0.0.1 -t mx torproject.org
 
 deb-src:
-	dpkg-buildpackage -S -rfakeroot -us -uc
+	dpkg-buildpackage -S -rfakeroot -us -uc -I.git -i.git
 
 deb:
-	dpkg-buildpackage -rfakeroot -us -uc
+	dpkg-buildpackage -rfakeroot -us -uc -I.git -i.git
 
 deb-clean:
 	-rm build
