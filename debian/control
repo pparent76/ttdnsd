@@ -8,7 +8,7 @@ Homepage: https://www.torproject.org/ttdnsd/
 
 Package: ttdnsd
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, tor
+Depends: ${shlibs:Depends}, ${misc:Depends}, tor, tsocks
 Description: Tor TCP DNS Daemon
  ttdnsd is a small UDP to TCP DNS shim for use with the Tor SOCKS proxy
  interface. It should also work with other SOCKS proxies.
