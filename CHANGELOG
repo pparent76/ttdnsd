@@ -1,3 +1,7 @@
+v0.6 Jul. 2. 2010
+ - fix debian package dependency issues
+ - add unbound configuration file
+
 v0.5 Jul. 2. 2010
  - actual release
  - uploaded into debian and deb.torproject.org

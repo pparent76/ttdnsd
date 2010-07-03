@@ -487,13 +487,13 @@ When we're ready for a Serious Release, it will have its own git repo:
 
 If you're git-adverse, I've also made a (signed) tar.gz:
 
-    http://crypto.nsa.org/tor/ttdnsd-0.5.tar.gz
-    http://crypto.nsa.org/tor/ttdnsd-0.5.tar.gz.asc
+    http://crypto.nsa.org/tor/ttdnsd-0.6.tar.gz
+    http://crypto.nsa.org/tor/ttdnsd-0.6.tar.gz.asc
 
 Fetch the tar.gz file and the signature:
 
     cd /tmp
-    wget http://crypto.nsa.org/tor/ttdnsd-0.5.tar.gz{,.asc}
+    wget http://crypto.nsa.org/tor/ttdnsd-0.6.tar.gz{,.asc}
 
 ===================== Verifying GPG Signatures =========================
 
@@ -510,7 +510,7 @@ gpg:              unchanged: 1
 You should expect to see a good signature for the source code you've
 just downloaded:
 
-% gpg --verify ttdnsd-0.5.tar.gz.asc
+% gpg --verify ttdnsd-0.6.tar.gz.asc
 gpg: Signature made Thu 01 Jul 2010 01:55:15 AM PDT using RSA key ID
 E012B42D
 gpg: Good signature from "Jacob Appelbaum <jacob@appelbaum.net>"
@@ -524,12 +524,12 @@ step, don't skip this one!
 
 Next, you'll want to unpack the source code:
 
-    tar -xzf ttdnsd-0.5.tar.gz
+    tar -xzf ttdnsd-0.6.tar.gz
 
 You'll need nothing more than what is required to build Tor. Compile it
 with make:
 
-    cd ttdnsd-0.5
+    cd ttdnsd-0.6
     make
 
 If you'd like to install it directly, you can use the 'install' make target:

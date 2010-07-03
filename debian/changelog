@@ -1,3 +1,10 @@
+ttdnsd (0.6) unstable; urgency=low
+
+  * fix debian package dependencies
+  * add unbound configuration file
+
+ -- Jacob Appelbaum <jacob@torproject.org>  Fri, 02 Jul 2010 22:48:32 -0700
+
 ttdnsd (0.5) unstable; urgency=low
 
   * Actual release to debian.torproject.org

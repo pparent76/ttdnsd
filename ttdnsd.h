@@ -7,7 +7,7 @@
  */
 
 // Update this version upon release
-#define TTDNSD_VERSION "0.5"
+#define TTDNSD_VERSION "0.6"
 
 #define DEBUG 0
 
