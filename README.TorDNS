@@ -439,10 +439,16 @@ If you'd like ttdnsd to start on boot, add it to the right rc.d locations:
 ====================== ttdnsd git Repositories =========================
 
 The most up to date code for ttdnsd is in my tor-extra git repo:
-https://gitweb.torproject.org/ioerror/ttdnsd.git
+
+    https://gitweb.torproject.org/ioerror/ttdnsd.git
+
+Clone the git repository like so:
+
+    git clone git://git.torproject.org/ioerror/ttdnsd.git
 
 When we're ready for a Serious Release, it will have its own git repo:
-https://gitweb.torproject.org/ttdnsd.git
+
+    https://gitweb.torproject.org/ttdnsd.git
 
 ======================== ttdnsd tar.gz Files ===========================
 
