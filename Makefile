@@ -94,6 +94,7 @@ deb-clean:
 src-tar-gz: clean
 	cd .. && mv ttdnsd ttdnsd-$(TTDNSDVERSION) && \
     tar --owner=nobody --group=nogroup --exclude=.gitignore \
+    --exclude=.git \
     -cvzf ttdnsd-$(TTDNSDVERSION).tar.gz ttdnsd-$(TTDNSDVERSION) && mv \
     ttdnsd-$(TTDNSDVERSION) ttdnsd
 
