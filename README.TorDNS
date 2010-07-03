@@ -21,7 +21,6 @@ handles DNS and understand the limitations of the existing mechanisms,
 jump to the end of the document to read about ttdnsd. Everyone else should
 read this document in its entirety.
 
-
 ========================== Prerequisites  ==============================
 
 You should have a basic understanding of how Tor works and you should
@@ -865,6 +864,11 @@ longer but will ultimately be cached, only using the less privacy
 friendly DNS resolution services when absolutely necessary. Your
 kilometrage may vary.
 
+==================== Firewall tricks with DNS ==========================
+
+It is possible to use iptables and other firewalling systems to redirect all
+possible DNS packets to a local torified DNS resolver. Many useful examples
+are documented on our wiki[8] for various different operating systems.
 
 ==================== Additional Privacy Issues =========================
 
@@ -945,3 +949,5 @@ This document will be updated and should remain in the ttdnsd git repository:
 [7] For instance, OpenDNS considers it a feature to modify DNS results
 in some circumstances. We don't think these modifications are
 appropriate defaults for Tor users.
+
+[8] https://trac.torproject.org/projects/tor/wiki/TheOnionRouter/TransparentProxy
