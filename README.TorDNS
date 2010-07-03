@@ -184,7 +184,7 @@ Jul 02 08:57:53.131 [notice] Our DNS cache size is approximately 4856 bytes.
 
 =========================== DNS and UDP ================================
 
-As most everyone reading this email knows, Tor does not transport UDP
+As most everyone reading this document knows, Tor does not transport UDP
 traffic. This presents a rather annoying problem for anyone wanting to
 use UDP protocols, which in practice means virtually all Tor users.
 After all, almost all Tor users need to use DNS, and DNS is probably
