@@ -7,18 +7,20 @@ comment on how DNS works or doesn't work in practice with the Tor
 network today.
 
 This email is an attempt to cover every aspect of interacting with the
-DNS with regard to Tor in a single place. It is probably a good idea for the
-reader to be familiar with basic DNS and Tor concepts. This email covers
-running as a Tor client, using third party software to interact with the
-internet through a Tor client, and the various DNS requirements or duties of
-Tor relays.
+DNS with regard to Tor in a single place. It is probably a good idea for
+the reader to be familiar with basic DNS and Tor concepts. This email
+covers running as a Tor client, using third party software to interact
+with the internet through a Tor client, and the various DNS requirements
+or duties of Tor relays.
 
 The secondary purpose of this mail is to show that there is currently a
 gap in the DNS functionality of Tor. I aim to partially close that gap
 by (re)introducing a new (to us) piece of software to the Tor ecosystem:
 ttdnsd - The Tor TCP DNS Daemon. If you already understand how Tor
-handles DNS and understand the limits, jump to the end of the email to
-read about ttdnsd. Everyone else should read this email in its entirety.
+handles DNS and understand the limitations of the existing mechanisms,
+jump to the end of the email to read about ttdnsd. Everyone else should
+read this email in its entirety.
+
 
 ========================== Prerequisites  ==============================
 
@@ -43,40 +45,51 @@ Feel free to drop by our (SSL/TLS enabled on port 6697) IRC channel:
 If you need additional help, feel free to send an email to
 tor-assistants@torproject.org and we'll help you get Tor running!
 
+
 ======================= DNS Leaks and You ==============================
 
-We say that DNS is leaking or that you've leaked DNS when your computer sends
-DNS requests to the internet without sending them through Tor.
+We say that DNS is leaking or that you've leaked DNS when your computer
+sends DNS requests to the internet without sending them through Tor.
+This can be a serious privacy and anonymity risk because an eavesdropper
+can observe these requests and use them to infer which sites and services
+you're communicating with.
 
-This is a common problem with many applications that have the ability to proxy
-connections through the Tor network. If you're leaking DNS, at the time a
-connection is made, some applications will resolve the hostname required for
-the connection through the system resolver, rather than through Tor.
+This is a common problem with many applications that have the ability to
+proxy their connections through the Tor network. If you're leaking DNS,
+just before a connection is made, a leaky application will look up the
+required hostname for the connection through the operating system's
+regular DNS query mechanism, rather than through Tor.
 
-The general problem of sending DNS requsts through the local network, as
-opposed to using Tor for DNS resolution, is that it makes de-anonymization
-fairly trivial. Additionally, the local network now has a fairly good chance of
-knowing what connections you're trying to make anonymously. This also means
-that the local network may tamper with the results.
+The general problem with this is that these queries are sent unencrypted
+over the network from your computer. Since the queries identify the
+servers you're about to communicate with, they can make de-anonymization
+fairly trivial. Additionally, the local network now has a fairly good
+chance of knowing what connections you're trying to make anonymously. This
+also means that the local network may tamper with the results.
 
-While it is always the case that Tor users should use Torbutton[-1], not all
-applications benefit from such a plugin. Torbutton ensures that Firefox uses
-the local proxy for name resolution. It's a practical Firefox DNS leak plugger.
-When an application does not do this but rather sends the DNS request through
-the local network, we refer to this as leaking DNS. We try to discover if key
-applications are leaky but ultimately, if your system resolver is sending a DNS
-request, unless you're using a special resolver tunneled over Tor, the jig is
-up.
+While Tor users should always use Torbutton[-1] for their web browsing,
+not all applications have an equivalent plugin available. Torbutton
+addresses DNS leaks from within Firefox by ensuring that Firefox uses
+the local Tor proxy for its DNS name lookup requests. However, other
+applications may not do this and may, as a result, leak DNS requests.
+We try to discover if popular applications are leaky but, ultimately,
+any application that makes a DNS request may compromise your anonymity
+unless specifically configured to make that request over Tor.  The central
+concern is thus for an applications that don't know to send their name
+lookup requests via Tor, or don't know how to do so.  Tor can't protect
+these applications' requests.
 
-In all cases, Tor may provide adequate protection for your queries if you use
-it. The primary issue is that if an application doesn't send Tor a host name
-for resolution, Tor won't be able to protect the application's request.
+It may be better for privacy to have a general solution to DNS lookups
+available, since even if some programs are configured to make DNS queries
+through Tor, they might sometimes use plugins or external applications
+that don't know anything about Tor.
 
 Be cautious about DNS leaks; only you can stop DNS leaks!
 
+
 =========================== Tor clients ================================
 
-Tor as a client generally does not need the DNS to function. The Tor
+Tor itself generally does not rely on the DNS to function. The Tor
 client bootstraps with IPv4 addresses that are compiled into Tor; the
 client may also have a cached copy of a recent network consensus. The
 Tor client will open connections to those nodes without the need for
@@ -87,6 +100,7 @@ a proxy with a fully qualified domain name, your Tor client will perform
 resolution with your system DNS resolver. The timeout for DNS resolution
 requests performed by Tor as a client is 300 seconds and the maximum
 host name length is 256 bytes.
+
 
 ======================= Tor Hidden Services ============================
 
@@ -99,51 +113,62 @@ system resolver to resolve the name. This will happen at the time the
 configuration change is noticed by Tor; generally this is at start up
 but may also be during a HUP or SETCONF event.
 
+If the server providing the hidden service doesn't want to be
+associated with the hidden service, this could be considered a
+DNS leak because the server will be making a potentially
+publicly-observable DNS query related to the hidden service.
+
+
 =========================== Tor relays =================================
 
 Tor as a relay is slightly more complex. There are generally two kinds
 of Tor relays. The first is commonly called a middle node. The second is
-commonly called an exit node. These are generalizations and do not
-describe anything beyond the exit policy of the relay. A directory
-authority may be a middle relay or an exit relay, the bridge directory
-may be an middle relay or an exit relay, and so on.
+commonly called an exit node. These are generalizations and are
+independent of other characteristics of the machine that functions
+as a Tor relay. Thus a directory authority may be a middle relay or an
+exit relay, the bridge directory may be an middle relay or an exit relay,
+and so on.
 
-A middle relay is any Tor relay that does not allow exiting to the
-internet on any port. A bridge may technically be a middle node with the
-appropriate exit policy. Generally, users interact with middle relays in
-two ways. The first is as a point of entry to the Tor network and the
-second is as an intermediate relay in any circuit used before exiting
-the Tor network.
+A "middle relay" is any Tor relay that does not allow traffic to exit
+to the public internet on any port. A middle relay is willing to
+forward traffic only to other Tor relays. Technically, a bridge node
+may be a middle node with the appropriate exit policy. Generally,
+users interact with middle relays in two ways. The first is as a point
+of entry to the Tor network and the second is as an intermediate relay
+in any circuit used before exiting the Tor network.
 
-Exit relays are what we call a relay that allows exiting in their exit
-policy. For the purposes of DNS, it's important to note that a node does
-not need to be marked as an exit in the network consensus to perform
-resolution services for a client. Any node that doesn't have an exit
-policy of 'reject *:*' may be used for DNS resolution purposes. Tor
-preemptively builds circuits and Tor will use those circuits for DNS
-resolution.
+An "exit relay" is what we call a relay that allows exiting in its exit
+policy, and hence that is willing to forward some traffic to the public
+internet on behalf of clients. For the purposes of DNS, it's important
+to note that a node does not need to be marked as an exit in the network
+consensus to perform resolution services on behalf of a client. Any node
+that doesn't have an exit policy of 'reject *:*' may be used for DNS
+resolution purposes. Tor preemptively builds circuits and Tor will use
+those circuits for DNS resolution.
 
-Additionally, both of these general types of relays may perform name
-resolution for themselves. If the relay is configured with a host name
-in the 'Address' configuration section of their torrc configurtion, the
-relay will attempt to use that name in the ip address discovery process.
-Without 'Address' set to an ip address, Tor will also attempt lookups on
-the host name. The relay will use the system resolver to make this
-resolve request. All of this is handled by eventdns from libevent.
+Additionally, both of these types of relays may perform name resolution
+for themselves. If the relay is configured with a host name in the
+'Address' configuration section of its torrc configuration, the relay
+will attempt to use that name in the IP address discovery process.
+Without 'Address' set to an IP address, Tor will also attempt lookups on
+the host name. The relay will use the system resolver to make this resolve
+request. All of this functionality is handled by eventdns from libevent.
 
 Any Tor relay may also expose interfaces (SOCKS, TransPort, DNSPort,
-etc) for use as a client; a user does not need to run two copies of Tor
-to relay for the network and to use it as a client. This has no impact
-on DNS requests. Such a configuration generates no additional DNS
-traffic beyond the above mentioned DNS requirements.
+etc.) for use as by an end client application; a user does not need to
+run two copies of Tor to relay for the network as a whole and to use
+it locally as a client. This has no impact on DNS requests. Such a
+configuration generates no additional DNS traffic beyond the above
+mentioned DNS requirements.
 
 It is also reasonable to configure Tor to use a different list of
 resolvers, rather than the system resolver. This is especially useful
-when you have a system wide resolver that tunnels over Tor.
+when you have a system-wide resolver that tunnels over Tor.
 
 There is a maximum of 256 of outstanding DNS requests and the maximum
 host name is 256 bytes long. Tor will also only wait 300 seconds after
-sending a request before deciding that a reply will never come.
+sending a request before giving up and deciding that no reply will ever
+come.
 
 It is possible to check the total number of cached DNS responses for a
 Tor relay by sending the SIGUSR1 signal to a Tor relay:
@@ -156,31 +181,34 @@ cached responses:
 Jul 02 08:57:53.131 [notice] Our DNS cache has 5 entries.
 Jul 02 08:57:53.131 [notice] Our DNS cache size is approximately 4856 bytes.
 
+
 =========================== DNS and UDP ================================
 
 As most everyone reading this email knows, Tor does not transport UDP
 traffic. This presents a rather annoying problem for anyone wanting to
-use UDP protocols and this is essentially everyone. DNS is probably the
-most popular and well known UDP protocol on the planet. Since we don't
-provide any kind of UDP transport for Tor clients, we've had to cherry
-pick which kinds of DNS requests we'd like to support.
+use UDP protocols, which in practice means virtually all Tor users.
+After all, almost all Tor users need to use DNS, and DNS is probably
+the most popular and well-known UDP protocol. Since we don't provide any
+kind of general UDP transport for Tor clients, we've had to cherry-pick
+which kinds of DNS requests we'd like to support.
 
 In general there are a few methods for users to interface with Tor as a
 client. Each method will eventually result in a resolution or a failure
 for various DNS request types. The four most common ways for users to
 interact with Tor all support basic DNS requests:
 
-  A local SOCKS4A and SOCKS5 provided by Tor
+  A local SOCKS4A and SOCKS5 proxy service provided by Tor
   The DNSPort provided by Tor
-  HTTP(S) proxies such as polipo or privoxy
+  HTTP(S) proxies such as Polipo or Privoxy
   A DNS shim that acts as a UDP to TCP translator
+
 
 ========================= SOCKS4A/SOCKS5 ===============================
 
 Tor provides a SOCKS proxy as an interface for making connections and
 resolving host names. This is probably the most commonly used interface
 to the Tor network. It is often used as the final proxy in a series of
-proxy chained programs.
+chained proxy programs.
 
 In the most simple case, a user may attempt to resolve a hostname with a
 tool like tor-resolve[0]. tor-resolve is implemented by extending
@@ -192,8 +220,8 @@ This method allows a user to resolve 'A' and 'PTR' records; technically,
 it also means that 'CNAME' records will also be resolved if the record
 points to a canonical 'A' record. However, the user will not see that
 there is a 'CNAME' record at any point. The user will only get the
-resolved address if everything works as expected. This is far less functional
-than a full DNS implementation.
+resolved address if everything works as expected. This is far less
+functional than a full DNS implementation.
 
 Still, this is extremely useful even if fairly limited:
 
@@ -202,6 +230,7 @@ io@uncertainty:~% tor-resolve torproject.org
 
 io@uncertainty:~% tor-resolve -x 38.229.70.10
 torproject.org
+
 
 ============================= DNSPort ==================================
 
@@ -285,7 +314,7 @@ Having a local DNS server is useful; many applications may only support
 SOCKS4, rather than SOCKS4A or SOCKS5 - their failure could lead to
 de-anonymization. It is also useful to ensure that possible DNS leaks
 will fail closed - if your system only knows about 127.0.0.1:53, it's
-hard but not impossible to leak DNS packets to the general internet. The
+hard but not impossible to leak DNS packets to the public internet. The
 DNSPort performs basic caching services, there is a hard coded time out
 for the internal cache. The DNS packets returned to the client by the
 DNSPort have a TTL time that is equal to what the upstream authoritative
@@ -293,22 +322,22 @@ reply reports.
 
 ========================= HTTP(S) Proxies ==============================
 
-The use of HTTP(S) proxies is quite common; thanks to The Great Firefox
-SOCKS Bug[2], we've had to use, ship, and support privoxy[3] or polipo[4]. This
-ensures that web browsing was actually responsive. It also improves our general
-application support; many applications do not support SOCKS{4,4A,5}, these
-applications often support HTTP(S) proxies.
+The use of HTTP(S) proxies is quite common; thanks to The Great
+Firefox SOCKS Bug[2], we've had to use, ship, and support Privoxy[3]
+or Polipo[4]. This ensures that web browsing is actually responsive. It
+also improves our general application support; many applications do not
+support SOCKS{4,4A,5}, but these applications often support HTTP(S)
+proxies.
 
 Whatever your proxy of choice, it's likely that the proxy or proxies are
-chained into the SOCKS interface. In rare cases, you may use a proxy
-that is transparently torified. In all cases, the proxy is limited in
-the types of records that are available to the application as mentioned
-above.
+chained into the SOCKS interface. In rare cases, you may use a proxy that
+is transparently torified. In all cases, the proxy makes only a limited
+number of types of DNS records that are available to the application,
+as mentioned above.
 
-The proxy generally opens a connection to the destination host name and
-the the Exit node will satisfy simple DNS resolution requests. This is
-part of the Tor protocol itself and it does not include full DNS
-resolution service.
+The proxy generally requests the exit node to satisfy simple DNS
+resolution requests from within the Tor network. This is part of the
+Tor protocol itself and it does not include full DNS resolution service.
 
 ===================== Tor DNS Internals ================================
 
@@ -319,29 +348,29 @@ to perform resolution.
 The SOCKS commands mentioned above are satisfied by the Tor client and
 the relevant resolution may occur at the edge of the Tor network.
 
-It would be fair to say that Tor clients resolve DNS requests by sending them
-over circuits. The two DNS request types may be satisfied by almost all modern
-Tor exit nodes that allows connections to the general internet.
+It would be fair to say that Tor clients resolve DNS requests by sending
+them over circuits. The two DNS request types may be satisfied by almost
+all modern Tor exit nodes that allows connections to the general internet.
 
-However, it is worth noting that Tor does not send complete DNS requests. It
-only sends host names.  The process of resolving those host names is somewhat
-obtuse. In many cases, a connection is opened and the connecting client never
-needs to learn the address.
+However, it is worth noting that Tor does not send complete DNS
+requests; it only sends host names. The process of resolving those host
+names is somewhat obtuse. In many cases, a connection is opened and the
+connecting client never needs to learn the address.
 
-Section 6.2 of the tor-spec.txt[5] outlines the method for
-connecting to a specific host by name. Specifically, the Tor client
-creates a RELAY_BEGIN cell that includes the DNS host name. This is
-transported to the edge of a given circuit. The Exit node at the end of
-the circuit does all of the heavy lifting, it performs the name
-resolution directly with the Exit node's system resolver.
+Section 6.2 of the tor-spec.txt[5] outlines the method for connecting
+to a specific host by name. Specifically, the Tor client creates a
+RELAY_BEGIN cell that includes the DNS host name. This is transported
+to the edge of a given circuit. The exit node at the end of the circuit
+does all of the heavy lifting, it performs the name resolution directly
+with the exit node's system resolver.
 
-If all goes well, the Exit node will respond with a RELAY_CONNECTED
+If all goes well, the exit node will respond with a RELAY_CONNECTED
 cell. If successful the payload of this cell will include the IPv4
 address for the host name. In theory, it may include an IPv6 address.
 
 Currently there is no IPv6 resolution supported by any version of Tor
 but it's nice that the protocol is Real World compatible without too
-much tinkering. If the query fails, the Exit node will reply with a
+much tinkering. If the query fails, the exit node will reply with a
 RELAY_END cell and the user is left without her DNS requests being
 answered. Obviously, any connection attempted will have failed by this point.
 There are many reasons that this may happen and the user no reasonable ability
@@ -349,7 +378,7 @@ to inspect the actual DNS response.
 
 ===================== Related DNS-like Stuff ===========================
 
-There is additional handling of DNS and DNS relatated stuff in
+There is additional handling of DNS and DNS related stuff in
 address-spec.txt[6]; this includes .onion and .exit notation. While
 technically these are used in place of host names, they're not directly
 relevant and aren't really important in the scope of Tor's DNS needs.
@@ -357,34 +386,36 @@ relevant and aren't really important in the scope of Tor's DNS needs.
 ======================= Old Hope: tor-proxy-dns ========================
 
 Once, a long time ago, we had a super star programmer named Tup in our
-community. He was anonymous to us. He was a programming machine and we really
-miss him. We often wonder and worry about what has happened to our friend of
-sorts. He would crank out code in a myriad of languages that served all sorts
-of useful purposes. One of the things that he wrote was a small program in
-python called tor-proxy-dns; this software was useful but written in python,
-abandoned by the missing super star, and generally lost to the sands of time.
+community. He was anonymous to us. He was a programming machine and
+we really miss him. We often wonder and worry about what has happened
+to our friend. He would crank out code in a myriad of languages that
+served all sorts of useful purposes. One of the things that he wrote
+was a small program in Python called tor-proxy-dns; this software was
+useful but written in Python, abandoned by the missing superstar, and
+generally lost to the sands of time.
 
-Tor interacted with tor-proxy-dns in an importat way: it took advantage of the
-VirtualAddrNetwork configuration option.
+Tor interacted with tor-proxy-dns in an important way: it took advantage
+of the VirtualAddrNetwork configuration option.
 
-VirtualAddrNetwork is an obscure but very useful option for decreasing latency
-at connection time. When enabled, Tor will automatically return a specially
-mapped ip address. Eventually, Tor will learn the real address and keep an
-internal mapping between the virtual address and the real address. Tor
-remembers this mapping for the duration of execution but it is not saved
-between Tor restarts. This works  except in cases where the ip address is noted
-by an application, such as OpenSSH. This will decrease perceived and actual
-latency but it has frustrating side effects for some applications.
+VirtualAddrNetwork is an obscure but very useful option for decreasing
+latency at connection time. When enabled, Tor will automatically return a
+specially mapped IP address. Eventually, Tor will learn the real address
+and keep an internal mapping between the virtual address and the real
+address. Tor remembers this mapping for the duration of execution but
+it is not saved between Tor restarts. This works except in cases where
+the IP address is noted by an application, such as OpenSSH. This will
+decrease perceived and actual latency but it has frustrating side effects
+for some applications.
 
 ===================== A New Hope: ttdnsd ===============================
 
 The Tor Project has adopted The Tor TCP DNS Daemon, herein known as
 ttdnsd, from code originally written by the Fantastic Collin Mulliner.
 He was kind enough to re-license it under the BSD license and send it
-our way. Myself, Roger, Kragen, Nick, and others have spent some spare
-time over the last month hacking on it. We've made a lot of improvements
-and we think there's a lot more to be done. ttdnsd is a useful way to
-work around the limitations inherent in how DNS is currently handled.
+our way. Roger, Kragen, Nick, I and others have spent some spare time
+over the last month hacking on it. We've made a lot of improvements and
+we think there's a lot more to be done. ttdnsd is a useful way to work
+around the limitations inherent in how DNS is currently handled.
 
 ttdnsd is a small C program that allows you to make arbitrary DNS
 requests of any type. This is possible because ttdnsd converts any UDP
@@ -400,25 +431,28 @@ default, we're shipping with a known tested, known open recursive name
 server run by Google: 8.8.8.8. We'd be more than happy to ship multiple
 resolvers as long as they don't behave in a funky way[7].
 
-ttdnsd is pretty portable; it was originally designed for embedded Linux based
-routers. It currently builds on (Debian, Ubuntu, etc) Gnu/Linux, FreeBSD,
-NetBSD, Mac OS X, and perhaps someday also on Windows.  It builds on the iPhone
-but does not seem to function. Patches are gladly accepted; bug reports are
-useful too, I'm sure there's a lot to catch!
+ttdnsd is pretty portable; it was originally designed for embedded Linux
+based routers. It currently builds on (Debian, Ubuntu, etc) Gnu/Linux,
+FreeBSD, NetBSD, Mac OS X, and perhaps someday also on Windows. It builds
+on the iPhone but does not seem to function. Patches are gladly accepted;
+bug reports are useful too, I'm sure there's a lot to catch!
 
-ttdnsd almost certainly must be run as root to function properly. It
-drops privileges after it bind()s to port 53 on 127.0.0.1 to listen for
-UDP DNS requests; this is similar to DNSPort but provides access to a
-larger set of record types.
+ttdnsd currently must be run as root to function properly. It drops
+privileges after it bind()s to port 53 on 127.0.0.1 to listen for UDP
+DNS requests; this is similar to DNSPort but provides access to a larger
+set of record types.
 
-ttdnsd presents a small privacy trade-off but it allows for nearly all
+ttdnsd presents a small privacy trade-off, but it allows for nearly all
 DNS records to be resolved. The main privacy concern is that there is a
-third party or a list of third parties that will answer your DNS
-queries. As you change circuits, they will always be contacted for DNS
-requests directed over ttdnsd. It is unclear how widely this differs
-from the real world resolution process that happens now; what is the
-major DNS resolver used by Tor servers currently? Do we already do this
-with a third party?
+particular third party or set of third parties that will always answer
+your DNS queries. Over time, you may use different exit nodes, but if
+you are looking up a relatively uncommon hostname, you may make the same
+or similar requests to these DNS servers. As a result, they may be in
+a position to speculate about which particular exit node a particular
+Tor user was using when. It is unclear how widely this differs from the
+real-world resolution process that's already in use; what is the major
+DNS resolver used by Tor servers currently? Do we already do this with
+a third party?
 
 =================== Installing ttdnsd with dpkg ========================
 
@@ -452,7 +486,7 @@ When we're ready for a Serious Release, it will have its own git repo:
 
 ======================== ttdnsd tar.gz Files ===========================
 
-If you're git adverse, I've also made a (signed) tar.gz:
+If you're git-adverse, I've also made a (signed) tar.gz:
 
     http://crypto.nsa.org/tor/ttdnsd-0.5.tar.gz
     http://crypto.nsa.org/tor/ttdnsd-0.5.tar.gz.asc
@@ -509,6 +543,12 @@ release engineering. Read the Makefile for more information.
 
 ======================== Starting ttdnsd ===============================
 
+(Note that if you already have a local name server or local caching
+resolver, the default ttdnsd configuration may conflict with it, since
+both will want to listen on the tcp/53 port on 127.0.0.1.  Some advice
+about making ttdnsd coexist with an existing local caching resolver is
+provided in a subsequent section.)
+
 Using ttdnsd is quite straightforward. First, you'll want to run it by
 starting it with the init.d script:
 
@@ -532,7 +572,10 @@ If you'd like your entire system to use ttdnsd for resolution, you'll
 want to add 127.0.0.1 to the system /etc/resolv.conf file.
 
 You can now use any program that requires working DNS and your entire
-system will resolve things through ttdnsd.
+system will resolve things through ttdnsd. Note that this will require
+tor to be running in order for any application to make DNS queries,
+even if that application isn't torified or would not normally be
+dependent on tor.
 
 A basic example is as follows:
 
@@ -803,6 +846,7 @@ tf4LfJGBADihXiZOZLFH1Vkwl31+zK9GjokysZikvC6fUa3qlxZtRH3a
 ;; WHEN: Thu Jul  1 18:35:39 2010
 ;; MSG SIZE  rcvd: 1480
 
+
 ========================= Caching Answers ==============================
 
 If you have a local DNS cache, it's probably reasonable to configure
@@ -819,39 +863,54 @@ the resolver on 127.0.0.3:53 is the system resolver and it prefers
 unable to resolve the hostnames. This kind of failure mode may take
 longer but will ultimately be cached, only using the less privacy
 friendly DNS resolution services when absolutely necessary. Your
-kilometerage may vary.
+kilometrage may vary.
+
 
 ==================== Additional Privacy Issues =========================
 
-As a small side note, it is often the case that third party XMPP clients
-attempt to look up SRV records when registering an XMPP account. Sadly
-many clients appear to simply leak the server information, even if the
-account has been explicitly configured to use a proxy. It is the authors
-personal opinion that these clients should behave differently: people
-use proxies for many reasons, not the least of which may be for security
-or privacy issues posed by sending unencrypted data to the local
-network. By using ttdnsd or the DNSPort, the system resolver should fail
-to leak the DNS requests to the local network. When using ttdnsd, it
-should be possible for things to simply work transparently, whereas they
-may entirely fail with DNSPort.
+Some applications may provide a proxy setting but disregard it in
+certain circumstances. ttdnsd can make the use of these applications
+safer with regard to DNS leaks.
+
+For instance, it is often the case that third party XMPP clients attempt
+to look up SRV records when registering an XMPP account. Sadly, many
+clients appear to simply leak the server information, even if the account
+has been explicitly configured to use a proxy. In the author's opinion,
+these clients' behavior is inappropriate: people use proxies for many
+reasons, not the least of which may be for security or privacy issues
+posed by sending unencrypted data to the local network. By using ttdnsd
+or the DNSPort, the system resolver should fail to leak the DNS requests
+to the local network. When using ttdnsd, it should be possible for things
+to simply work transparently, whereas they may fail entirely with DNSPort.
 
 
 =================== Additional Security Issues =========================
 
-Unlike when a user resolves through Tor with the DNSPort or otherwise, ttdnsd
-does not provide protection against forged DNS requests. Specifically it does
-not currently provide the same protecions as ClientDNSRejectInternalAddresses
-does for responses that contain privacy address space. This means that ttdnsd
-should be used with slightly more caution unless you're using DNSSEC or
-DNSCurve enabled resources. If the DNS resources that you're using are actually
-secured, it's probably more secure to use ttdnsd than to not as Tor does not
-currently support DNSSEC or DNSCurve.
+Unlike when a user resolves through Tor with the DNSPort or
+otherwise, ttdnsd does not provide protection against forged DNS
+requests. Specifically it does not currently provide the same protections
+as ClientDNSRejectInternalAddresses does for responses that contain
+private address space. This means that ttdnsd should be used with slightly
+more caution unless you're using DNSSEC or DNSCurve enabled resources. If
+the DNS resources that you're using are actually secured, it's probably
+more secure to use ttdnsd than to not as Tor does not currently support
+DNSSEC or DNSCurve.
+
+With any mechanism that forwards DNS requests over tor, the tor exit
+node is in a position to falsify DNS responses, unless they are
+verified with a separate mechanism like DNSSEC. That means that a
+hostile exit node, or exit node's ISP, could try to redirect you to
+false or compromised versions of the services that you want to
+communicate with. As with all other use of tor, tor cannot directly
+protect you from these threats unless you have some additional
+cryptographic mechanism to identify the services you're communicating
+with. This threat is not specific to the use of ttdnsd.
 
 ========================= Going Forward ================================
 
 There are many areas where we may be able to improve the way that Tor
 handles arbitrary DNS request types; if you feel like being the one to
-Bell The Cat for any of these DNS issues: feel free to chime in! It's
+Bell The Cat for any of these DNS issues, feel free to chime in! It's
 likely going to take a proposal or two to really change things.
 
 I'm hopeful that ttdnsd will serve as a useful UDP to TCP shim until we
@@ -879,4 +938,6 @@ TODO.HACK for some outstanding tasks in need of an outstanding hacker.
 
 [6] http://gitweb.torproject.org/tor.git?a=blob_plain;hb=HEAD;f=doc/spec/address-spec.txt
 
-[7] OpenDNS considers this a feature.
+[7] For instance, OpenDNS considers it a feature to modify DNS results
+in some circumstances. We don't think these modifications are
+appropriate defaults for Tor users.
