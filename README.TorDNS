@@ -920,6 +920,10 @@ DNS changes coming down the pipe.
 We'd love some help with ttdnsd - please download the source and check out
 TODO.HACK for some outstanding tasks in need of an outstanding hacker.
 
+This document will be updated and should remain in the ttdnsd git repository:
+
+    https://gitweb.torproject.org/ioerror/ttdnsd.git/blob/HEAD:/README.TorDNS
+
 =========================== Footnotes ==================================
 
 [-1] https://www.torproject.org/torbutton/
