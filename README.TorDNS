@@ -6,9 +6,9 @@ discuss how Tor and DNS are used together. It also is important to
 comment on how DNS works or doesn't work in practice with the Tor
 network today.
 
-This email is an attempt to cover every aspect of interacting with the
+This document is an attempt to cover every aspect of interacting with the
 DNS with regard to Tor in a single place. It is probably a good idea for
-the reader to be familiar with basic DNS and Tor concepts. This email
+the reader to be familiar with basic DNS and Tor concepts. This document
 covers running as a Tor client, using third party software to interact
 with the internet through a Tor client, and the various DNS requirements
 or duties of Tor relays.
@@ -18,8 +18,8 @@ gap in the DNS functionality of Tor. I aim to partially close that gap
 by (re)introducing a new (to us) piece of software to the Tor ecosystem:
 ttdnsd - The Tor TCP DNS Daemon. If you already understand how Tor
 handles DNS and understand the limitations of the existing mechanisms,
-jump to the end of the email to read about ttdnsd. Everyone else should
-read this email in its entirety.
+jump to the end of the document to read about ttdnsd. Everyone else should
+read this document in its entirety.
 
 
 ========================== Prerequisites  ==============================
@@ -412,7 +412,7 @@ for some applications.
 The Tor Project has adopted The Tor TCP DNS Daemon, herein known as
 ttdnsd, from code originally written by the Fantastic Collin Mulliner.
 He was kind enough to re-license it under the BSD license and send it
-our way. Roger, Kragen, Nick, I and others have spent some spare time
+our way. Roger, Kragen, Nick, Jacob, and others have spent some spare time
 over the last month hacking on it. We've made a lot of improvements and
 we think there's a lot more to be done. ttdnsd is a useful way to work
 around the limitations inherent in how DNS is currently handled.
@@ -435,7 +435,7 @@ ttdnsd is pretty portable; it was originally designed for embedded Linux
 based routers. It currently builds on (Debian, Ubuntu, etc) Gnu/Linux,
 FreeBSD, NetBSD, Mac OS X, and perhaps someday also on Windows. It builds
 on the iPhone but does not seem to function. Patches are gladly accepted;
-bug reports are useful too, I'm sure there's a lot to catch!
+bug reports are useful too.
 
 ttdnsd currently must be run as root to function properly. It drops
 privileges after it bind()s to port 53 on 127.0.0.1 to listen for UDP
@@ -462,7 +462,7 @@ file, installing ttdnsd is as easy as:
     apt-get update
     apt-get install ttdnsd
 
-You'll should have a Tor running and then you should run ttdnsd:
+You should have a Tor running and then you should run ttdnsd:
 
     /etc/init.d/ttdnsd start
 
@@ -478,7 +478,7 @@ The most up to date code for ttdnsd is in my tor-extra git repo:
 
 Clone the git repository like so:
 
-    git clone git://git.torproject.org/ioerror/ttdnsd.git
+    git clone git://git.torproject.org/ioerror/ttdnsd
 
 When we're ready for a Serious Release, it will have its own git repo:
 
@@ -525,7 +525,7 @@ step, don't skip this one!
 
 Next, you'll want to unpack the source code:
 
-    tar -xvzf ttdnsd-0.5.tar.gz
+    tar -xzf ttdnsd-0.5.tar.gz
 
 You'll need nothing more than what is required to build Tor. Compile it
 with make:
