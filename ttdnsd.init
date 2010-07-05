@@ -34,7 +34,12 @@ export TSOCKS_CONF_FILE
 [ -r /etc/default/$NAME ] && . /etc/default/$NAME
 
 # Load the VERBOSE setting and other rcS variables
-. /lib/init/vars.sh
+if [ -f /lib/init/vars.sh ];
+then
+    . /lib/init/vars.sh;
+else
+    echo "skipping load of vars.sh; not found";
+fi
 
 # Define LSB log_* functions.
 # Depend on lsb-base (>= 3.0-6) to ensure that this file is present.
