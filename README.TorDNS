@@ -556,7 +556,7 @@ starting it with the init.d script:
 You should see that it is running:
 
 nobody   24108  0.3  0.0  17072  1376 ?        Ss   18:30   0:00
-/usr/sbin/ttdnsd -b 127.0.0.1 -p 53 -P /var/run/ttdnsd/pid -f
+/usr/sbin/ttdnsd -b 127.0.0.1 -p 53 -P /var/lib/ttdnsd/pid -f
 /etc/ttdnsd.conf
 
 After startup, ttdnsd chroots and quickly drops privileges. You should
