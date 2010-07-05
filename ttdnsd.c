@@ -335,6 +335,7 @@ int request_add(struct request_t *r)
                     return 0;
                 }
                 else {
+                    printf("hash position %d selected\n", pos);
                      /* REFACTOR If it’s okay to do this, it would be
                         simpler to always do it, instead of only on
                         collisions. Then, if it’s buggy, it’ll show up
@@ -369,13 +370,14 @@ int request_add(struct request_t *r)
     // update id
     ul = (unsigned short int*)(r->b + 2);
     *ul = htons(r->id);
-
+    printf("updating id: %d\n", htons(r->id));
 
     memcpy((char*)req_in_table, (char*)r, sizeof(*req_in_table));
 
     // XXX: nice feature to have: send request to multiple peers for speedup and reliability
 
     dst_peer = peer_select();
+    printf("peer selected: %d\n", dst_peer->tcp_fd);
 
     if (dst_peer->con == CONNECTED) {
         return peer_sendreq(dst_peer, req_in_table);
