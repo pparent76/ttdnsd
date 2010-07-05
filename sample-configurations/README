@@ -1,0 +1,5 @@
+This directory contains sample configuration files for dns caching.
+
+Resolvers such as unbound or pdnsd may be configured to resolve through ttdnsd.
+In this directory, you'll find configuration files to assist with ttdnsd proxy
+chaining.
