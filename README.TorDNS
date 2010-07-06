@@ -390,8 +390,8 @@ community. He was anonymous to us. He was a programming machine and
 we really miss him. We often wonder and worry about what has happened
 to our friend. He would crank out code in a myriad of languages that
 served all sorts of useful purposes. One of the things that he wrote
-was a small program in Python called tor-proxy-dns; this software was
-useful but written in Python, abandoned by the missing superstar, and
+was a small program in PERL called tor-proxy-dns; this software was
+useful but written in PERL, abandoned by the missing superstar, and
 generally lost to the sands of time.
 
 Tor interacted with tor-proxy-dns in an important way: it took advantage
@@ -403,9 +403,14 @@ specially mapped IP address. Eventually, Tor will learn the real address
 and keep an internal mapping between the virtual address and the real
 address. Tor remembers this mapping for the duration of execution but
 it is not saved between Tor restarts. This works except in cases where
-the IP address is noted by an application, such as OpenSSH. This will
-decrease perceived and actual latency but it has frustrating side effects
-for some applications.
+the IP address is noted by an application, such as OpenSSH.
+
+Another unintended side effect is that some services such as those reached by
+.onion and .exit are expected to time out at resolve time, rather than resolve
+and time out at connection time.
+
+Thus, VirtualAddrNetwork will decrease perceived and actual latency but it has
+frustrating side effects for some applications.
 
 ===================== A New Hope: ttdnsd ===============================
 
