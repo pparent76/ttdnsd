@@ -351,6 +351,7 @@ int request_add(struct request_t *r)
             else if ((requests[pos].timeout + MAX_TIME) > ct) {
                 // request timed out, take it
                 printf("taking pos from timed out request\n");
+                req_in_table = &requests[pos];
                 break;
             }
             else {
@@ -372,10 +373,13 @@ int request_add(struct request_t *r)
     *ul = htons(r->id);
     printf("updating id: %d\n", htons(r->id));
 
-    memcpy((char*)req_in_table, (char*)r, sizeof(*req_in_table));
+    if ( req_in_table == NULL ) {
+        return -1;
+    } else {
+        memcpy((char*)req_in_table, (char*)r, sizeof(*req_in_table));
+    }
 
     // XXX: nice feature to have: send request to multiple peers for speedup and reliability
-
     printf("selecting peer\n");
     dst_peer = peer_select();
     printf("peer selected: %d\n", dst_peer->tcp_fd);
