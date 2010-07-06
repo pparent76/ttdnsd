@@ -376,6 +376,7 @@ int request_add(struct request_t *r)
 
     // XXX: nice feature to have: send request to multiple peers for speedup and reliability
 
+    printf("selecting peer\n");
     dst_peer = peer_select();
     printf("peer selected: %d\n", dst_peer->tcp_fd);
 
