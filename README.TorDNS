@@ -81,7 +81,8 @@ these applications' requests.
 It may be better for privacy to have a general solution to DNS lookups
 available, since even if some programs are configured to make DNS queries
 through Tor, they might sometimes use plugins or external applications
-that don't know anything about Tor.
+that don't know anything about Tor. Ultimately, any application that uses the
+DNS or generates UDP traffic may be a point of possible deanonymization.
 
 Be cautious about DNS leaks; only you can stop DNS leaks!
 
