@@ -47,7 +47,7 @@ clean:
 	rm -f $(OBJFILES) $(EXEC)
 
 install: all
-	strip $(EXEC)
+#	strip $(EXEC)
 	test -d $(DESTDIR)$(CHROOT) || mkdir -p $(DESTDIR)$(CHROOT)
 	test -d $(DESTDIR)/etc/ || mkdir -p $(DESTDIR)/etc/
 	cp $(CONF) $(DESTDIR)/etc/$(CONF)
@@ -107,6 +107,17 @@ git-tag:
 
 # These all work; you've broken something if these fail
 demo-dns-tests: demo
+	dig @127.0.0.1 -x 38.229.70.10
+	dig @127.0.0.1 -t A torproject.org
+	dig @127.0.0.1 -t SOA torproject.org
+	dig @127.0.0.1 -t NS torproject.org
+	dig @127.0.0.1 -t MX torproject.org
+	dig @127.0.0.1 -t CNAME svn.freehaven.net
+	dig @127.0.0.1 -t srv _xmpp-client._tcp.google.com
+	dig @127.0.0.1 -t aaaa www.kame.net
+	dig @127.0.0.1 -t RRSIG nic.se
+
+stress-test:
 	dig @127.0.0.1 -x 38.229.70.10
 	dig @127.0.0.1 -t A torproject.org
 	dig @127.0.0.1 -t SOA torproject.org
