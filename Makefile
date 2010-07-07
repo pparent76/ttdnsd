@@ -47,7 +47,7 @@ clean:
 	rm -f $(OBJFILES) $(EXEC)
 
 install: all
-#	strip $(EXEC)
+	strip $(EXEC)
 	test -d $(DESTDIR)$(CHROOT) || mkdir -p $(DESTDIR)$(CHROOT)
 	test -d $(DESTDIR)/etc/ || mkdir -p $(DESTDIR)/etc/
 	cp $(CONF) $(DESTDIR)/etc/$(CONF)
