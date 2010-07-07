@@ -11,6 +11,7 @@ v0.7 Jul. 7. 2010 "The Snow"
  - more debugging printf statements
  - fix Debianisms
  - change debhelper version to 5, rather than the absurdly high 7.0.50~
+ - extensively tested under reasonable load for ~24 hours before release!
 
 v0.6 Jul. 2. 2010
  - fix debian package dependency issues
