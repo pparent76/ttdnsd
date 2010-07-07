@@ -58,6 +58,9 @@ install: all
 	cp $(MANPAGE) $(DESTDIR)/usr/share/man/man1/
 	test -d $(DESTDIR)/etc/init.d/ || mkdir -p $(DESTDIR)/etc/init.d/
 	cp $(INITSCRIPT) $(DESTDIR)/etc/init.d/ttdnsd
+	test -d $(DESTDIR)/usr/share/doc/ttdnsd || mkdir -p \
+    $(DESTDIR)/usr/share/doc/ttdnsd/
+	cp -r sample-configurations $(DESTDIR)/usr/share/doc/ttdnsd/
 
 uninstall: all
 	rm $(DESTDIR)/usr/sbin/$(EXEC)
@@ -65,6 +68,7 @@ uninstall: all
 	rm -ri $(DESTDIR)$(CHROOT)
 	rm $(DESTDIR)/usr/share/man/man1/$(MANPAGE)
 	rm $(DESTDIR)/etc/init.d/ttdnsd
+	rm -r $(DESTDIR)/$(DESTDIR)/usr/share/doc/ttdnsd
 
 demo: install
 	echo "Killing ttdnsd"
