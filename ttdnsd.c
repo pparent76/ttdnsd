@@ -161,7 +161,7 @@ int peer_connected(struct peer_t *p)
 /*
 int peer_keepalive(uint peer)
 {
-	return 1;
+    return 1;
 }
 */
 
@@ -228,47 +228,47 @@ int peer_readres(struct peer_t *p)
     p->bl += ret;
 
     // get answer from receive buffer
-processanswer:
+    do {
 
-    if (p->bl < 2) {
-        return 2;
-    }
-    else {
-        len = ntohs(*l);
-
-        printf("r l=%d r=%d\n", len, p->bl-2);
-
-        if ((len + 2) > p->bl)
+        if (p->bl < 2) {
             return 2;
-    }
+        }
+        else {
+            len = ntohs(*l);
 
-    printf("received answer %d bytes\n", p->bl);
+            printf("r l=%d r=%d\n", len, p->bl-2);
 
-    ul = (unsigned short int*)(p->b + 2);
-    id = ntohs(*ul);
+            if ((len + 2) > p->bl)
+                return 2;
+        }
 
-    if ((req = request_find(id)) == -1) {
-        memmove(p->b, (p->b + len + 2), (p->bl - len - 2));
+        printf("received answer %d bytes\n", p->bl);
+
+        ul = (unsigned short int*)(p->b + 2);
+        id = ntohs(*ul);
+
+        if ((req = request_find(id)) == -1) {
+            memmove(p->b, (p->b + len + 2), (p->bl - len - 2));
+            p->bl -= len + 2;
+            return 0;
+        }
+        r = &requests[req];
+
+        // write back real id
+        *ul = htons(r->rid);
+
+        r->a.sin_family = AF_INET;
+        while (sendto(udp_fd, (p->b + 2), len, 0, (struct sockaddr*)&r->a, sizeof(struct sockaddr_in)) < 0 && errno == EAGAIN);
+
+        printf("forwarding answer (%d bytes)\n", len);
+
+        memmove(p->b, p->b + len +2, p->bl - len - 2);
         p->bl -= len + 2;
-        return 0;
-    }
-    r = &requests[req];
 
-    // write back real id
-    *ul = htons(r->rid);
+        // mark as handled/unused
+        r->id = 0;
 
-    r->a.sin_family = AF_INET;
-    while (sendto(udp_fd, (p->b + 2), len, 0, (struct sockaddr*)&r->a, sizeof(struct sockaddr_in)) < 0 && errno == EAGAIN);
-
-    printf("forwarding answer (%d bytes)\n", len);
-
-    memmove(p->b, p->b + len +2, p->bl - len - 2);
-    p->bl -= len + 2;
-
-    // mark as handled/unused
-    r->id = 0;
-
-    if (p->bl > 0) goto processanswer;
+    } while (p->bl > 0);
 
     return 1;
 }
@@ -459,7 +459,7 @@ int server(char *bind_ip, int bind_port)
 
     for (;;) {
         // populate poll array
-        for (pfd_num = 1, i = 0; i < MAX_PEERS; i++) {	
+        for (pfd_num = 1, i = 0; i < MAX_PEERS; i++) {  
             if (peers[i].tcp_fd != -1) {
                 pfd[pfd_num].fd = peers[i].tcp_fd;
                 switch (peers[i].con) {
