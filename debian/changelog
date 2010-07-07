@@ -1,3 +1,9 @@
+ttdnsd (0.7) unstable; urgency=low
+
+  * new upstream release
+
+ -- Jacob Appelbaum <jacob@torproject.org>  Wed, 07 Jul 2010 00:41:22 -0700
+
 ttdnsd (0.6) unstable; urgency=low
 
   * fix debian package dependencies

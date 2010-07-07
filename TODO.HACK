@@ -1,7 +1,6 @@
-For 0.6 or later:
+For 0.8 or later:
 
     Add service like funcionality for Ubuntu and other flavors of Gnu/Linux
-    Ask helix to package for deb.torproject.org.
     autoconf the entire build process for better portability
     make it simple to bump the version number for ttdnsd during release time
         currently, a release requires editing many files:
@@ -10,10 +9,9 @@ For 0.6 or later:
     Make nice little website in the Tor wml format and publish it on tpo:
         https://www.torproject.org/ttdnsd/
     Add bind configuration file that only forwards to ttdnsd
-    Add unbound configuration file that only forwards to ttdnsd
     Add RPM spec file for RPM builds
 
-Certainly 0.6 but probably much later:
+Certainly 0.8 but probably much later:
 
     re-write ttdnsd to use libevent
     Make supported DNS queries via Tor's SOCKS resolve method
