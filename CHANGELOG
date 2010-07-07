@@ -1,3 +1,17 @@
+v0.7 Jul. 7. 2010 "The Snow"
+ - inspired entirely by Coil; debugged with Icelandic space pop
+ - fix SIGSEV bug introduced in v0.4 or later
+ - addition of sample configuration for pdnsd
+ - update unbound config to fix localhost query issue
+ - install sample configuration files in a sane location
+ - install /etc/default/ttdnsd file for easy init.d optioning
+ - add stress-test Makefile target
+ - updates to README.TorDNS
+ - update to ttdnsd.init for easier confiugration and verbosity
+ - more debugging printf statements
+ - fix Debianisms
+ - change debhelper version to 5, rather than the absurdly high 7.0.50~
+
 v0.6 Jul. 2. 2010
  - fix debian package dependency issues
  - add unbound configuration file
