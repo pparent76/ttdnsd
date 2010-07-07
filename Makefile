@@ -61,8 +61,8 @@ install: all
 	test -d $(DESTDIR)/usr/share/doc/ttdnsd || mkdir -p \
     $(DESTDIR)/usr/share/doc/ttdnsd/
 	cp -r sample-configurations $(DESTDIR)/usr/share/doc/ttdnsd/
-	test -d $(DESTDIR)/etc/default/ || mkdir -p /etc/default/
-	cp -r ttdnsd.defaults $(DESTDIR)/etc/default/ttdnsd
+	test -d $(DESTDIR)/etc/default/ || mkdir -p $(DESTDIR)/etc/default/
+	cp ttdnsd.defaults $(DESTDIR)/etc/default/ttdnsd
 
 uninstall: all
 	rm $(DESTDIR)/usr/sbin/$(EXEC)
