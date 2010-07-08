@@ -3,7 +3,7 @@ GPGKEYID=E012B42D
 EXEC = ttdnsd
 CC = /usr/bin/gcc
 CHROOT = /var/lib/ttdnsd
-PIDFILE = $(CHROOT)/pid
+PIDFILE = $(DESTDIR)/$(CHROOT)/pid
 CONF = ttdnsd.conf
 TORTSOCKSCONF = tor-tsocks.conf
 MANPAGE = ttdnsd.1
@@ -47,7 +47,7 @@ clean:
 	rm -f $(OBJFILES) $(EXEC)
 
 install: all
-	strip $(EXEC)
+#	strip $(EXEC)
 	test -d $(DESTDIR)$(CHROOT) || mkdir -p $(DESTDIR)$(CHROOT)
 	test -d $(DESTDIR)/etc/ || mkdir -p $(DESTDIR)/etc/
 	cp $(CONF) $(DESTDIR)/etc/$(CONF)
