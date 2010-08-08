@@ -257,6 +257,14 @@ int peer_readres(struct peer_t *p)
         // write back real id
         *ul = htons(r->rid);
 
+        // Remove the AD flag from the reply if it has one. Because we might be
+        // answering requests to 127.0.0.1, the client might consider us
+        // trusted. While trusted, we shouldn't indicate that data is DNSSEC
+        // valid when we haven't checked it.
+        // See http://tools.ietf.org/html/rfc2535#section-6.1
+        if (len >= 6)
+          p->b[5] &= 0xdf;
+
         r->a.sin_family = AF_INET;
         while (sendto(udp_fd, (p->b + 2), len, 0, (struct sockaddr*)&r->a, sizeof(struct sockaddr_in)) < 0 && errno == EAGAIN);
 
