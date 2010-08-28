@@ -14,4 +14,4 @@ PORT_ARG="-p 53"
 # DEBUG_LOGGING="-l"
 
 # Glue all of it together below
-DEFAULTS="$ADDR_ARG $PORT_ARG"
+DEFAULTS="$ADDR_ARG $PORT_ARG $DEBUG_LOGGING"
