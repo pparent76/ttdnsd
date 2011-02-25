@@ -609,6 +609,8 @@ int main(int argc, char **argv)
     char pid_file[PATH_MAX] = {0};
     FILE *pf;
     int r;
+    char *env_ptr;
+    int env_size = 0;
 
     while ((opt = getopt(argc, argv, "VlhdcC:b:f:p:P:")) != EOF) {
         switch (opt) {
@@ -708,12 +710,24 @@ int main(int argc, char **argv)
             printf("can't chroot to %s, exit\n", chroot_dir);
             exit(1);
         }
-        // since we chroot, check for the tsocks config
-        strncpy(tsocks_conf, getenv(TSOCKS_CONF_ENV), PATH_MAX-1);
-        tsocks_conf[PATH_MAX-1] = '\0';
-        if (access(tsocks_conf, R_OK)) { /* access() is a race condition and unsafe */
-            printf("chroot=%s, can't access tsocks config at %s, exit\n", chroot_dir, tsocks_conf);
-            exit(1);
+        env_ptr = getenv("TSOCKS_CONF_ENV");
+        if (env_ptr == NULL) {
+          env_size = 0;
+        } else {
+          env_size = strlen(env_ptr);
+        }
+        if (env_size > 0) {
+           strncpy(tsocks_conf, env_ptr, (sizeof(tsocks_conf)-1));
+           tsocks_conf[PATH_MAX-1] = '\0';
+           printf("tsocks_conf: %s\n", tsocks_conf);
+        } else {
+            printf("chroot=%s, TSOCKS_CONF_ENV is unset\n", chroot_dir);
+        }
+        if (access(DEFAULT_TSOCKS_CONF, R_OK) == 0 ){
+            printf("chroot=%s, default tsocks config available at %s\n", chroot_dir, DEFAULT_TSOCKS_CONF);
+        }
+        if (access(tsocks_conf, R_OK) != 0) { /* access() is a race condition and unsafe */
+            printf("chroot=%s, unable to access tsocks config set in TSOCKS_CONF_ENV at %s, exit\n", chroot_dir, tsocks_conf);
         }
     }
 
