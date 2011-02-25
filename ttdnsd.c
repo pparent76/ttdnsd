@@ -445,9 +445,10 @@ int server(char *bind_ip, int bind_port)
         printf("is not a valid IPv4 address: %s\n", bind_ip);
         return(0); // Why is this 0?
     }
+
     if (bind(udp_fd, (struct sockaddr*)&udp, sizeof(struct sockaddr_in)) < 0) {
-        close(udp_fd);
         printf("can't bind to %s:%d\n", bind_ip, bind_port);
+        close(udp_fd);
         return(-1); // Perhaps this should be more useful?
     }
 
@@ -604,6 +605,7 @@ int main(int argc, char **argv)
     char chroot_dir[PATH_MAX] = {DEFAULT_CHROOT};
     char tsocks_conf[PATH_MAX];
     int log = 0;
+    int lfd;
     int bind_port = DEFAULT_BIND_PORT;
     int devnull;
     char pid_file[PATH_MAX] = {0};
@@ -732,17 +734,24 @@ int main(int argc, char **argv)
     }
 
     // privs will be dropped in server right after binding to port 53
-
     if (log) {
-        int lfd;
+        printf("log init...\n");
         lfd = open(DEFAULT_LOG, O_WRONLY|O_APPEND|O_CREAT, 00644);
         if (lfd < 0) {
-            if (dochroot) printf("chroot=%s ", chroot_dir);
+            if (dochroot)
+              printf("chroot=%s ", chroot_dir);
             printf("can't open log file %s, exit\n", DEFAULT_LOG);
             exit(1);
+        } else {
+            printf("log file opened: %s\n", DEFAULT_LOG);
+            printf("log file opened as fd: %i\n", lfd);
         }
-        dup2(lfd, 1);
-        dup2(lfd, 2);
+        printf("duping fds... check %s from here on out...\n", DEFAULT_LOG);
+        r = dup2(lfd, 1);
+        printf("dup2 says: %i\n", r);
+        r = dup2(lfd, 2);
+        printf("dup2 says: %i\n", r);
+        printf("closing original fd: %i...\n", lfd);
         close(lfd);
         dup2(devnull, 0);
         close(devnull);
@@ -754,8 +763,12 @@ int main(int argc, char **argv)
         close(devnull);
     }
 
+    printf("starting server...\n");
     r = server(bind_ip, bind_port);
-    if (r!=0)
-        printf("something went wrong with the server %d\n", r);
+    if (r != 0)
+        printf("something went wrong with the server: %i\n", r);
+    if (r == -1)
+        printf("failed to bind udp server to %s:%i: %i\n", bind_ip, bind_port, r);
+    printf("ttdnsd exiting now!\n");
     exit(r);
 }
