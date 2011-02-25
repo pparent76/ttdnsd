@@ -1,6 +1,5 @@
 v0.8 Aug. X. 2010 "Blue Skied an' Clear"
  - DNSSEC trust patch from Adam Langley <agl@imperialviolet.org>
- - Raised the MAX_REQUESTS from 499 to 49999
  - Update ttdnsd.defaults
  - fix getenv bug
 

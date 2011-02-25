@@ -20,7 +20,7 @@
 // maximal number of nameservers
 #define MAX_NAMESERVERS 32
 // request queue size (use a prime number for hashing)
-#define MAX_REQUESTS 49999
+#define MAX_REQUESTS 499
 // 199, 1009
 // max line size for configuration processing
 #define MAX_LINE_SIZE 1025
