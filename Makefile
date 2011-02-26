@@ -43,6 +43,9 @@ notsocks:
 static: $(SRCFILES)
 	$(CC) $(CFLAGS) -static $(SRCFILES) -o $(EXEC) -L$(STAGING_DIR)/usr/lib/libtsocks.a
 
+torsocks-static: $(SRCFILES)
+	$(CC) $(CFLAGS) -static $(SRCFILES) -o $(EXEC) -L$(STAGING_DIR)/usr/lib/torsocks/libtorsocks.a
+
 clean:
 	rm -f $(OBJFILES) $(EXEC)
 
