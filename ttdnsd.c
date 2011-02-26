@@ -185,6 +185,7 @@ int peer_sendreq(struct peer_t *p, struct request_t *r)
         connection to Tor has timed out. (Although that’s an unlikely
         failure mode.) */
     /* BUG: what if write() doesn't write all the data? */
+    /* This is writing data to the remote DNS server over Tor with TCP */
     while ((ret = write(p->tcp_fd, r->b, (r->bl + 2))) < 0 && errno == EAGAIN);
 
     if (ret == 0) {
@@ -218,6 +219,7 @@ int peer_readres(struct peer_t *p)
         smaller than the DNS response. But it could happen.  And then
         we fall into the `processanswer` code below without having the
         whole answer. */
+    /* This is reading data from Tor over TCP */
     while ((ret = read(p->tcp_fd, (p->b + p->bl), (RECV_BUF_SIZE - p->bl))) < 0 && errno == EAGAIN);
 
     if (ret == 0) {
@@ -265,6 +267,7 @@ int peer_readres(struct peer_t *p)
         if (len >= 6)
           p->b[5] &= 0xdf;
 
+        /* This is where we send the answer over UDP to the client */
         r->a.sin_family = AF_INET;
         while (sendto(udp_fd, (p->b + 2), len, 0, (struct sockaddr*)&r->a, sizeof(struct sockaddr_in)) < 0 && errno == EAGAIN);
 
