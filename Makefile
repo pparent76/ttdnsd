@@ -1,4 +1,5 @@
 TTDNSDVERSION= 0.7
+DEBIANVERSION=$(TTDNSDVERSION)-1
 GPGKEYID=E012B42D
 EXEC = ttdnsd
 CC = /usr/bin/gcc
@@ -142,3 +143,10 @@ stress-test:
 	dig @127.0.0.1 -t srv _xmpp-client._tcp.google.com
 	dig @127.0.0.1 -t aaaa www.kame.net
 	dig @127.0.0.1 -t RRSIG nic.se
+
+# This should update the version to match $(TTDNSDVERSION)
+version-bump:
+	echo $(TTDNSDVERSION) > VERSION
+	perl -p -i -e "s/(#define TTDNSD_VERSION)(.*)/#define TTDNSD_VERSION \"$(TTDNSDVERSION)\"/" ttdnsd.h
+	perl -p -i -e "s/(PKG_VERSION:=)(.*)/PKG_VERSION:=$(TTDNSDVERSION)/" package/ttdnsd/Makefile
+	dch -v $(DEBIANVERSION) -D unstable -m "new upstream release"
