@@ -615,7 +615,6 @@ int main(int argc, char **argv)
     FILE *pf;
     int r;
     char *env_ptr;
-    int env_size = 0;
 
     while ((opt = getopt(argc, argv, "VlhdcC:b:f:p:P:")) != EOF) {
         switch (opt) {
@@ -717,19 +716,14 @@ int main(int argc, char **argv)
         }
         env_ptr = getenv("TSOCKS_CONF_FILE");
         if (env_ptr == NULL) {
-          env_size = 0;
+          strncpy(tsocks_conf, DEFAULT_TSOCKS_CONF, (sizeof(tsocks_conf)-1));
+          tsocks_conf[PATH_MAX-1] = '\0';
+          printf("chroot=%s, TSOCKS_CONF_FILE is unset - using default: %s\n", chroot_dir, DEFAULT_TSOCKS_CONF);
+          setenv("TSOCKS_CONF_FILE", tsocks_conf, 1);
         } else {
-          env_size = strlen(env_ptr);
-        }
-        if (env_size > 0) {
            strncpy(tsocks_conf, env_ptr, (sizeof(tsocks_conf)-1));
            tsocks_conf[PATH_MAX-1] = '\0';
            printf("tsocks_conf: %s\n", tsocks_conf);
-        } else {
-            strncpy(tsocks_conf, DEFAULT_TSOCKS_CONF, (sizeof(tsocks_conf)-1));
-            tsocks_conf[PATH_MAX-1] = '\0';
-            printf("chroot=%s, TSOCKS_CONF_FILE is unset - using default: %s\n", chroot_dir, DEFAULT_TSOCKS_CONF);
-            setenv("TSOCKS_CONF_FILE", tsocks_conf, 1);
         }
         if (access(DEFAULT_TSOCKS_CONF, R_OK) == 0 ){
             printf("chroot=%s, default tsocks config available at %s\n", chroot_dir, DEFAULT_TSOCKS_CONF);
