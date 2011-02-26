@@ -9,6 +9,7 @@ TORTSOCKSCONF = tor-tsocks.conf
 MANPAGE = ttdnsd.1
 INITSCRIPT = ttdnsd.init
 TSOCKSLIB = tsocks
+TORSOCKSLIB = torsocks
 # If the program ever grows, we'll enjoy this macro:
 SRCFILES := $(wildcard *.c)
 OBJFILES := $(patsubst %.c,%.o,$(wildcard *.c))
@@ -36,6 +37,11 @@ LDFLAGS= $(LDHARDENING)
 
 all: $(SRCFILES)
 	$(CC) $(CFLAGS) $(SRCFILES) -o $(EXEC) -l$(TSOCKSLIB) -L$(STAGING_DIR)/usr/lib
+
+# Don't forget to add '/usr/lib/torsocks/' to '/etc/ld.so.conf.d/torsocks.conf'
+# also, you'll need to run `sudo ldconfig -v` when you've added the path
+torsocks: $(SRCFILES)
+	$(CC) $(CFLAGS) $(SRCFILES) -o $(EXEC) -l$(TORSOCKSLIB) -L/usr/lib/torsocks/ -L$(STAGING_DIR)/usr/lib
 
 notsocks:	
 	$(CC) $(CFLAGS) $(SRCFILES) -o $(EXEC) -L$(STAGING_DIR)/usr/lib
