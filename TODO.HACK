@@ -1,6 +1,5 @@
 For 0.8 or later:
 
-    Add service like funcionality for Ubuntu and other flavors of Gnu/Linux
     autoconf the entire build process for better portability
     make it simple to bump the version number for ttdnsd during release time
         currently, a release requires editing many files:
