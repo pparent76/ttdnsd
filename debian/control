@@ -24,6 +24,6 @@ Description: Tor TCP DNS Daemon
  configured in /etc/ttdns.conf  ;  the  connection  is
  held  open for a reasonable amount of time and
  subsequently closed when it is no longer in use. This
- allows users to make arbitrary DNS queries to will exit
+ allows users to make arbitrary DNS queries that will exit
  from the Tor network to the configured resolver(s).
  .
