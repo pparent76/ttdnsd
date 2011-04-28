@@ -103,6 +103,9 @@ deb-src:
 deb:
 	dpkg-buildpackage -rfakeroot -us -uc -I.git -i.git
 
+deb-sign:
+	debsign ttdnsd_$(TTDNSDVERSION)*.changes
+
 deb-clean:
 	-rm build
 	debian/rules clean
@@ -120,6 +123,12 @@ signed-src: src-tar-gz
 git-tag:
 	git tag -u $(GPGKEYID) ttdnsd-$(TTDNSDVERSION)
 	git push origin ttdnsd-$(TTDNSDVERSION)
+
+full-release: version-bump src-tar-gz deb-src deb
+	echo "Hopefully we have a release!"
+
+full-release-signed: version-bump src-tar-gz deb-src deb deb-sign signed-src
+	echo "Hopefully we have a signed release!"
 
 # These all work; you've broken something if these fail
 demo-dns-tests: demo
