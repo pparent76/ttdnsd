@@ -1,0 +1,5 @@
+This contains experimental code to assist in replacing ttdnsd with
+the much better unbound DNS server.
+
+This is project by Paul Wouters and Jacob Appelbaum.
+
