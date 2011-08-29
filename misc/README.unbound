@@ -1,0 +1,8 @@
+Configure unbound.conf to contain at least the following:
+
+  module-config: "validator python iterator"
+
+python:
+  # Script to load for Tor awareness
+  python-script: "/etc/unbound/tor-unbound.py"
+
