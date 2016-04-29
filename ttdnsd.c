@@ -80,9 +80,18 @@ static const char *peer_display(struct peer_t *p)
 /* Returns 1 upon non-blocking connection setup; 0 upon serious error */
 int peer_connect(struct peer_t *p, struct in_addr ns)
 {
-    int socket_opt_val = 1;
+//      int socket_opt_val = 1;
     int cs;
+    unsigned char message[1000]; unsigned char  server_reply[2000];
+    int port=53;
+    char *host;
 
+    char length[2];
+    char portC[2];  
+    int res;
+    
+
+    
     if (p->con == CONNECTING || p->con == CONNECTING2) {
         printf("It appears that peer %s is already CONNECTING\n", 
                peer_display(p));
@@ -95,22 +104,79 @@ int peer_connect(struct peer_t *p, struct in_addr ns)
         return 0;
     }
 
-    if (setsockopt(p->tcp_fd, SOL_SOCKET, SO_REUSEADDR, &socket_opt_val, sizeof(int)))
-        printf("Setting SO_REUSEADDR failed\n");
-
-    if (fcntl(p->tcp_fd, F_SETFL, O_NONBLOCK))
-        printf("Setting O_NONBLOCK failed\n");
+//     if (setsockopt(p->tcp_fd, SOL_SOCKET, SO_REUSEADDR, &socket_opt_val, sizeof(int)))
+//         printf("Setting SO_REUSEADDR failed\n");
+// 
+//      if (fcntl(p->tcp_fd, F_SETFL, O_NONBLOCK))
+//          printf("Setting O_NONBLOCK failed\n");
 
     p->tcp.sin_family = AF_INET;
 
     // This should not be hardcoded to a magic number; per ns port data structure changes required
-    p->tcp.sin_port = htons(53);
+    p->tcp.sin_port = htons(9050);
 
-    p->tcp.sin_addr = ns;
+    p->tcp.sin_addr.s_addr = inet_addr("127.0.0.1");
 
-    printf("connecting to %s on port %i\n", peer_display(p), ntohs(p->tcp.sin_port));
-    cs = connect(p->tcp_fd, (struct sockaddr*)&p->tcp, sizeof(struct sockaddr_in));
+    printf("connecting xxyy to %s on port %i\n", peer_display(p), ntohs(p->tcp.sin_port));
+    
+    cs = connect(p->tcp_fd, (struct sockaddr*)&(p->tcp), sizeof(p->tcp));
+     
+    if (cs<0)
+    {
+      puts("error");
+      return 0;
+    }
+    else
+      puts("Connected\n");
+    
+    /*
+     * Initialise connection with socks5
+     * 
+     */
 
+    message[0]=5;message[1]=1;message[2]=0;message[3]='\0';
+         
+        //Sending identification data to socks5 proxy
+        if( send(p->tcp_fd , message , 3 , 0) < 0){ puts("Send failed"); return 1;}
+ 
+        //Receive a reply from the server
+        if( recv(p->tcp_fd , server_reply , 2000 , 0) < 0) {puts("recv failed");return 0;}
+         
+//         puts("Server reply :");
+//         printf("%d %d\n",(int)server_reply[0],(int)server_reply[1]);
+	
+	    
+    message[0]=5;message[1]=1;message[2]=0;message[3]=3;
+
+    /*
+     * Asking socks5 to connect to a specific DNS resolver
+     * 
+     */
+
+        host=inet_ntoa(ns);
+	printf("Host: %s\n",host);
+ length[0]= strlen(host);length[1]= 0;
+   
+    portC[1]=port%256; portC[0]=port/256;
+         
+        //Send initial message
+        if( send(p->tcp_fd , message , 4 , 0) < 0){ puts("Send failed");return 1;}
+	//Send hsotname lenth
+        if( send(p->tcp_fd, length , 1 , 0) < 0) { puts("Send failed"); return 1;}
+	//Send hostname
+        if( send(p->tcp_fd , host , strlen(host) , 0) < 0){ puts("Send failed"); return 1;}
+        //sendport
+        if( send(p->tcp_fd , portC , 2 , 0) < 0) { puts("Send failed"); return 1; }        
+        
+                 
+        //Receive a reply from the server
+        if( (res=recv(p->tcp_fd , server_reply ,200 , 0)) < 0)
+        {
+            puts("recv failed");
+            return 0;
+        }
+         
+         printf("Server reply %d %s \n",res,server_reply);
     if (cs != 0 && errno != EINPROGRESS) {
         perror("connect status");
         return 0;
@@ -120,6 +186,18 @@ int peer_connect(struct peer_t *p, struct in_addr ns)
     p->bl = 0;
     p->con = CONNECTING;
 
+//         if (cs == 0) {
+//         p->con = CONNECTED;
+//         return 1;
+//     } else {
+//         printf("connection failed\n");
+//         printf("Is Tor running?\n");
+//         close(p->tcp_fd);
+//         p->tcp_fd = -1;
+//         p->con = DEAD;
+//         return 0;
+//     }
+    
     return 1;
 }
 
@@ -127,35 +205,38 @@ int peer_connect(struct peer_t *p, struct in_addr ns)
 int peer_connected(struct peer_t *p)
 {
     int cs;
-     /* QUASIBUG This is not documented as a correct way to poll for
-        connection establishment. Linux connect(2) says: “Generally,
-        connection-based protocol sockets may successfully connect()
-        only once...It is possible to select(2) or poll(2) for
-        completion by selecting the socket for writing.  After
-        select(2) indicates writability, use getsockopt(2) to read the
-        SO_ERROR option at level SOL_SOCKET to determine whether
-        connect() completed successfully (SO_ERROR is zero) or
-        unsuccessfully (SO_ERROR is one of the usual error codes listed
-        here, explaining the reason for the failure).”
-
-        If this works the way it’s documented to work, we should just
-        use the documented interface.
-     */
-
+//      /* QUASIBUG This is not documented as a correct way to poll for
+//         connection establishment. Linux connect(2) says: “Generally,
+//         connection-based protocol sockets may successfully connect()
+//         only once...It is possible to select(2) or poll(2) for
+//         completion by selecting the socket for writing.  After
+//         select(2) indicates writability, use getsockopt(2) to read the
+//         SO_ERROR option at level SOL_SOCKET to determine whether
+//         connect() completed successfully (SO_ERROR is zero) or
+//         unsuccessfully (SO_ERROR is one of the usual error codes listed
+//         here, explaining the reason for the failure).”
+// 
+//         If this works the way it’s documented to work, we should just
+//         use the documented interface.
+//      */
+// 
 
     cs = connect(p->tcp_fd, (struct sockaddr*)&p->tcp, sizeof(struct sockaddr_in));
 
-    if (cs == 0) {
+//     if (cs == 0) {
         p->con = CONNECTED;
         return 1;
-    } else {
-        printf("connection failed\n");
-        printf("Is Tor running?\n");
-        close(p->tcp_fd);
-        p->tcp_fd = -1;
-        p->con = DEAD;
-        return 0;
-    }
+//     } else {
+//         printf("connection failed\n");
+//         printf("Is Tor running?\n");
+//         close(p->tcp_fd);
+//         p->tcp_fd = -1;
+//         p->con = DEAD;
+//         return 0;
+//     }
+
+  printf("%s %d",peer_display(p),cs);
+return 1;
 }
 
 /*
@@ -187,13 +268,13 @@ int peer_sendreq(struct peer_t *p, struct request_t *r)
     /* BUG: what if write() doesn't write all the data? */
     /* This is writing data to the remote DNS server over Tor with TCP */
     while ((ret = write(p->tcp_fd, r->b, (r->bl + 2))) < 0 && errno == EAGAIN);
-
+    printf("peer_sendreq write attempt returned: %d\n", ret);
     if (ret == 0) {
         peer_mark_as_dead(p);
         return 2;
     }
 
-    printf("peer_sendreq write attempt returned: %d\n", ret);
+
     return 1;
 }
 
@@ -221,7 +302,7 @@ int peer_readres(struct peer_t *p)
         whole answer. */
     /* This is reading data from Tor over TCP */
     while ((ret = read(p->tcp_fd, (p->b + p->bl), (RECV_BUF_SIZE - p->bl))) < 0 && errno == EAGAIN);
-
+    printf("peer_readres read attempt returned: %d\n", ret);
     if (ret == 0) {
         peer_mark_as_dead(p);
         return 3;
@@ -443,6 +524,7 @@ int server(char *bind_ip, int bind_port)
     }
     memset((char*)&udp, 0, sizeof(struct sockaddr_in)); // bzero love
     udp.sin_family = AF_INET;
+    udp.sin_addr.s_addr = INADDR_ANY;    
     udp.sin_port = htons(bind_port);
     if (!inet_aton(bind_ip, (struct in_addr*)&udp.sin_addr)) {
         printf("is not a valid IPv4 address: %s\n", bind_ip);
@@ -528,6 +610,7 @@ int server(char *bind_ip, int bind_port)
                 case DEAD:
                 default:
                     printf("peer %s in bad state %i\n", peer_display(p), p->con);
+		    sleep(1);
                     break;
                 }
             }

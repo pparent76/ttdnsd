@@ -30,3 +30,4 @@ More details at:
 The Current development git tree can be found here:
 
     https://gitweb.torproject.org/ioerror/ttdnsd.git
+TSOCKS_CONF_FILE=tsocks.conf ttdnsd -b 127.0.0.1 -p 53 -P /var/lib/ttdnsd/pid -l

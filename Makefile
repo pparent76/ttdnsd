@@ -37,7 +37,7 @@ CFLAGS=-g -O2 $(EXTRA_CFLAGS) $(GCCHARDENING) $(GCCWARNINGS) -Werror
 LDFLAGS= $(LDHARDENING)
 
 all: $(SRCFILES)
-	$(CC) $(CFLAGS) $(SRCFILES) -o $(EXEC)  -L/usr/lib/torsocks/$(TORSOCKSLIB) -L$(STAGING_DIR)/usr/lib
+	$(CC) $(CFLAGS) $(SRCFILES) -o $(EXEC)
 
 # Don't forget to add '/usr/lib/torsocks/' to '/etc/ld.so.conf.d/torsocks.conf'
 # also, you'll need to run `sudo ldconfig -v` when you've added the path
