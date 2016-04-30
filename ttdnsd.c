@@ -80,20 +80,21 @@ static const char *peer_display(struct peer_t *p)
 /* Returns 1 upon non-blocking connection setup; 0 upon serious error */
 int peer_connect(struct peer_t *p, struct in_addr ns)
 {
-//      int socket_opt_val = 1;
+    int socket_opt_val = 1;
     int cs;
-    unsigned char message[1000]; unsigned char  server_reply[2000];
+    unsigned char message[1000];
+    unsigned char  server_reply[2000];
     int port=53;
     char *host;
 
     char length[2];
-    char portC[2];  
+    char portC[2];
     int res;
-    
 
-    
+
+
     if (p->con == CONNECTING || p->con == CONNECTING2) {
-        printf("It appears that peer %s is already CONNECTING\n", 
+        printf("It appears that peer %s is already CONNECTING\n",
                peer_display(p));
         return 1;
     }
@@ -104,100 +105,113 @@ int peer_connect(struct peer_t *p, struct in_addr ns)
         return 0;
     }
 
-//     if (setsockopt(p->tcp_fd, SOL_SOCKET, SO_REUSEADDR, &socket_opt_val, sizeof(int)))
-//         printf("Setting SO_REUSEADDR failed\n");
-// 
-//      if (fcntl(p->tcp_fd, F_SETFL, O_NONBLOCK))
-//          printf("Setting O_NONBLOCK failed\n");
+
 
     p->tcp.sin_family = AF_INET;
 
-    // This should not be hardcoded to a magic number; per ns port data structure changes required
+//     This should not be hardcoded to a magic number;
+//     per ns port data structure changes required
     p->tcp.sin_port = htons(9050);
 
     p->tcp.sin_addr.s_addr = inet_addr("127.0.0.1");
 
-    printf("connecting xxyy to %s on port %i\n", peer_display(p), ntohs(p->tcp.sin_port));
-    
+    printf("--------------- New connection -----------------\n");
+    printf("connecting to %s on port %i\n", peer_display(p), ntohs(p->tcp.sin_port));
+
     cs = connect(p->tcp_fd, (struct sockaddr*)&(p->tcp), sizeof(p->tcp));
-     
+
     if (cs<0)
     {
-      puts("error");
-      return 0;
+        puts("error");
+        return 0;
     }
     else
-      puts("Connected\n");
-    
-    /*
-     * Initialise connection with socks5
-     * 
-     */
-
-    message[0]=5;message[1]=1;message[2]=0;message[3]='\0';
-         
-        //Sending identification data to socks5 proxy
-        if( send(p->tcp_fd , message , 3 , 0) < 0){ puts("Send failed"); return 1;}
- 
-        //Receive a reply from the server
-        if( recv(p->tcp_fd , server_reply , 2000 , 0) < 0) {puts("recv failed");return 0;}
-         
-//         puts("Server reply :");
-//         printf("%d %d\n",(int)server_reply[0],(int)server_reply[1]);
-	
-	    
-    message[0]=5;message[1]=1;message[2]=0;message[3]=3;
+        puts("Connected\n");
 
     /*
-     * Asking socks5 to connect to a specific DNS resolver
-     * 
-     */
+      * Initialise connection with socks5
+      *
+      */
 
-        host=inet_ntoa(ns);
-	printf("Host: %s\n",host);
- length[0]= strlen(host);length[1]= 0;
-   
-    portC[1]=port%256; portC[0]=port/256;
-         
-        //Send initial message
-        if( send(p->tcp_fd , message , 4 , 0) < 0){ puts("Send failed");return 1;}
-	//Send hsotname lenth
-        if( send(p->tcp_fd, length , 1 , 0) < 0) { puts("Send failed"); return 1;}
-	//Send hostname
-        if( send(p->tcp_fd , host , strlen(host) , 0) < 0){ puts("Send failed"); return 1;}
-        //sendport
-        if( send(p->tcp_fd , portC , 2 , 0) < 0) { puts("Send failed"); return 1; }        
-        
-                 
-        //Receive a reply from the server
-        if( (res=recv(p->tcp_fd , server_reply ,200 , 0)) < 0)
-        {
-            puts("recv failed");
-            return 0;
-        }
-         
-         printf("Server reply %d %s \n",res,server_reply);
+    message[0]=5;
+    message[1]=1;
+    message[2]=0;
+    message[3]='\0';
+
+    //Sending identification data to socks5 proxy
+    if( send(p->tcp_fd , message , 3 , 0) < 0) {
+        puts("Send failed");
+        return 1;
+    }
+
+    //Receive a reply from the server
+    if( recv(p->tcp_fd , server_reply , 2000 , 0) < 0) {
+        puts("recv failed");
+        return 0;
+    }
+
+    message[0]=5;
+    message[1]=1;
+    message[2]=0;
+    message[3]=3;
+
+    /*
+      * Asking socks5 to connect to a specific DNS resolver
+      *
+      */
+
+    host=inet_ntoa(ns);
+    printf("Host: %s\n",host);
+    length[0]= strlen(host);
+    length[1]= 0;
+
+    portC[1]=port%256;
+    portC[0]=port/256;
+
+    //Send initial message
+    if( send(p->tcp_fd , message , 4 , 0) < 0) {
+        puts("Send failed");
+        return 1;
+    }
+    //Send hsotname lenth
+    if( send(p->tcp_fd, length , 1 , 0) < 0) {
+        puts("Send failed");
+        return 1;
+    }
+    //Send hostname
+    if( send(p->tcp_fd , host , strlen(host) , 0) < 0) {
+        puts("Send failed");
+        return 1;
+    }
+    //sendport
+    if( send(p->tcp_fd , portC , 2 , 0) < 0) {
+        puts("Send failed");
+        return 1;
+    }
+
+
+    //Receive a reply from the server
+    if( (res=recv(p->tcp_fd , server_reply ,200 , 0)) < 0)
+    {
+        puts("recv failed");
+        return 0;
+    }
+
     if (cs != 0 && errno != EINPROGRESS) {
         perror("connect status");
         return 0;
     }
 
-    // We should be in non-blocking mode now
+    
+    if (setsockopt(p->tcp_fd, SOL_SOCKET, SO_REUSEADDR, &socket_opt_val, sizeof(int)))
+         printf("Setting SO_REUSEADDR failed\n");
+
+    if (fcntl(p->tcp_fd, F_SETFL, O_NONBLOCK))
+        printf("Setting O_NONBLOCK failed\n");
+    //We should be in non-blocking mode now
     p->bl = 0;
     p->con = CONNECTING;
 
-//         if (cs == 0) {
-//         p->con = CONNECTED;
-//         return 1;
-//     } else {
-//         printf("connection failed\n");
-//         printf("Is Tor running?\n");
-//         close(p->tcp_fd);
-//         p->tcp_fd = -1;
-//         p->con = DEAD;
-//         return 0;
-//     }
-    
     return 1;
 }
 
@@ -220,20 +234,23 @@ int peer_connected(struct peer_t *p)
 //         use the documented interface.
 //      */
 // 
+    
+    int error_code;
+    socklen_t error_code_size = sizeof(error_code);
+    getsockopt(p->tcp_fd, SOL_SOCKET, SO_ERROR, &error_code, &error_code_size);
 
-    cs = connect(p->tcp_fd, (struct sockaddr*)&p->tcp, sizeof(struct sockaddr_in));
-
-//     if (cs == 0) {
+    
+     if (error_code == 0) {
         p->con = CONNECTED;
         return 1;
-//     } else {
-//         printf("connection failed\n");
-//         printf("Is Tor running?\n");
-//         close(p->tcp_fd);
-//         p->tcp_fd = -1;
-//         p->con = DEAD;
-//         return 0;
-//     }
+    } else {
+        printf("connection failed with code:%d\n",error_code);
+        printf("Is Tor running?\n");
+        close(p->tcp_fd);
+        p->tcp_fd = -1;
+        p->con = DEAD;
+        return 0;
+    }
 
   printf("%s %d",peer_display(p),cs);
 return 1;
