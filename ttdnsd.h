@@ -32,7 +32,7 @@
 #define NOGROUP 65534
 #define DEFAULT_BIND_PORT 53
 #define DEFAULT_BIND_IP "127.0.0.1"
-#define DEFAULT_RESOLVERS "ttdnsd.conf"
+#define DEFAULT_RESOLVERS "/var/lib/ttdnsd/ttdnsd.conf"
 #define DEFAULT_LOG "ttdnsd.log"
 #define DEFAULT_CHROOT "/var/lib/ttdnsd"
 #define DEFAULT_TSOCKS_CONF "tsocks.conf"

@@ -13,7 +13,7 @@ Currently unsupported platforms:
 
 
  0) make install
- 1) cd /var/lib/ttdnsd && ttdnsd 
+ 1) ttdnsd 
 
 More details at:
 
